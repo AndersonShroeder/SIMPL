@@ -1,6 +1,6 @@
-from Lexer import Lexer
-from Parser import Parser
-from Interpreter import Interpreter, Context
+from SIMPL.Lexer import Lexer
+from SIMPL.Parser import Parser
+from SIMPL.Interpreter import Interpreter, Context
 def run(fn, text):
     # Gen Tokens
     lexer = Lexer(fn, text)
