@@ -1,5 +1,5 @@
-from SIMPL.Constants import *
-from SIMPL.Errors import *
+from Constants import *
+from Errors import *
 
 #####################################
 #Interpreter

@@ -1,4 +1,4 @@
-from SIMPL.run import run
+from run import run
 
 while True:
     text = input('SIMPL > ')

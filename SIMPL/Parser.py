@@ -1,5 +1,5 @@
-from SIMPL.Errors import *
-from SIMPL.Constants import *
+from Errors import *
+from Constants import *
 
 #####################################
 #Nodes
