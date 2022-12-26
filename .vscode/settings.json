@@ -58,6 +58,9 @@
         "xlocmon": "cpp",
         "xloctime": "cpp",
         "xtree": "cpp",
-        "sstream": "cpp"
+        "sstream": "cpp",
+        "unordered_map": "cpp",
+        "list": "cpp",
+        "xhash": "cpp"
     }
 }

@@ -1,4 +1,4 @@
-#include "Lexer.h"
+#include "NewLexer.h"
 
 Tokens_Error run(string text, string filename){
     Lexer lexer = Lexer(text, filename);

@@ -11,10 +11,10 @@ class Node{
     Node(){}
 
     //constructor
-    Node(Position start, Position end){
-        pos_start = start;
-        pos_end = end;
-    }
+    // Node(Position start, Position end){
+    //     pos_start = start;
+    //     pos_end = end;
+    // }
 
 
     //getters
@@ -36,7 +36,10 @@ class NumberNode: public Node{
     NumberNode(){}
 
     //constructor
-    NumberNode(Token token, Position start, Position end): Node(start, end){
+    // NumberNode(Token token, Position start, Position end): Node(start, end){
+    //     tok = token;
+    // }
+    NumberNode(Token token){
         tok = token;
     }
 };
@@ -52,7 +55,12 @@ class BinOpNode: public Node{
     BinOpNode(){}
 
     //constructor
-    BinOpNode(NumberNode left, NumberNode right, Token op_tok_): Node(left.get_start(), right.get_end()){
+    // BinOpNode(NumberNode left, NumberNode right, Token op_tok_): Node(left.get_start(), right.get_end()){
+    //     left_node = left;
+    //     right_node = right;
+    //     op_tok = op_tok_;
+    // }
+    BinOpNode(NumberNode left, NumberNode right, Token op_tok_){
         left_node = left;
         right_node = right;
         op_tok = op_tok_;
@@ -115,13 +123,18 @@ class Parser{
         
     }
 
-    //Generates Factors
-    void factor(){
+    //Generates Factors -> finds a number node that is either an int or float and returns it
+    NumberNode factor(){
+        Token tok = current_tok;
+            if (tok.get_type() == TT_INT | tok.get_type() == TT_FLOAT){
+                advance();
+                return NumberNode(tok);
+            }
     }
 
     //Generates Terms
-    void term(){
-
+    BinOpNode term(){
+        
     }
 
     //Generates Expressions
@@ -131,5 +144,19 @@ class Parser{
 
     void binary_operation(){
 
+    }
+
+    void binary_operation(auto func, auto ops){
+        NumberNode left = factor();
+        BinOpNode node;
+
+        while (current_tok.get_type() == TT_MUL | current_tok.get_type() == TT_DIV){
+            Token op_tok = current_tok;
+            advance();
+            NumberNode right = factor();
+            BinOpNode node = BinOpNode(left, right, op_tok); 
+        }
+
+        return node;
     }
 };
