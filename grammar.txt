@@ -9,4 +9,31 @@ factor  : INT|FLOAT
         : (PLUS|MINUS) factor
         : LPAREN expr RPAREN
 
+Keywords -> variable types, function declaration, class declaration, loop declaration, conditionals, variable names
+Variable names -> must start with a letter and can only contain (a-z/A-Z/0-9/_)
 
+Supports:
+        - Basic Types:
+                - int
+                - bool
+                - string
+                - float 
+
+        - Basic operations (logic, arithmatic, etc.)
+        - If statements
+        - Loops (for, while)
+        - functions
+        - user defiend types/classes
+
+
+SYNTAX:
+        - If/else statements:
+                if (condition):
+                        execute
+                else if (condition):
+                        execute
+                else:
+                        execute
+        - For loop:
+                for :
+                        execute

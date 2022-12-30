@@ -10,15 +10,18 @@ int main(){
 
         auto tokens = structure.get_tokens();
         auto error = structure.get_error();
+        Parser parser = Parser(tokens);
+        auto ast = parser.parse();
 
         if (structure.check_error()){
             std::cout << error << '\n';
         }
 
         else{
-            for (Token token: tokens){
-                token.print();
-            };
+            for (Token& tok : tokens){
+                tok.print();
+            }
+            std::cout << ast.str() << '\n';
         }
     }
 

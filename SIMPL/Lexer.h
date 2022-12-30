@@ -1,121 +1,4 @@
-#include "Errors.h"
-#include <vector>
-#include <unordered_map>
-
-//Use a map to generate tokens -> index into a map constant with current_char to find the associated value
-std::unordered_map<string, string> SYMBOLS = {
-    {"+", "PLUS"},
-    {"-", "MINUS"},
-    {"*", "MUL"},
-    {"/", "DIV"},
-    {"(", "LPAREN"},
-    {")", "RPAREN"},
-};
-
-//Token class -> stores a tokenized value and the type associated
-class Token{
-    string type;
-    float value;
-
-    public:
-    Token(){}
-
-    //constructor
-    Token(string type_, float value_=0){
-        type = type_;
-        value = value_;
-    }
-
-    //prints type and value of token
-    void print(){
-        std::cout << type << ": " << value << '\n';
-    }
-
-    //getters
-    string get_type(){
-        return type;
-    }
-};
-
-
-//Lexer Class -> generates tokens/errors from input text
-class FileData{
-
-    //contains tokens
-    std::vector<Token> tokens;
-
-    //keeps track of errors in lexing
-    string error_details;
-    bool error = false;
-
-    //information to traverse input text
-    string text;
-    bool end_file = false;
-    int pos = -1;
-    char current_char;
-    
-    public:
-    FileData(){};
-
-    FileData(string text_, string filename){
-        text = text_;
-        ++(*this);
-    }
-
-    //Moves Lexer along input string -> only updates current_char if havent reached end of text
-    void operator ++(){
-        pos += 1;
-        if (pos < text.length()){
-            current_char = text.at(pos);
-        }
-
-        else{
-            end_file = true;
-            current_char = 0;
-        }
-    }
-
-    std::vector<Token> get_tokens(){
-        return tokens;
-    }
-
-    void add_token(Token token_to_add){
-        tokens.push_back(token_to_add);
-    }
-
-    void clear_tokens(){
-        tokens = {};
-    }
-
-    void make_error(string input_error){
-        error_details = input_error;
-        error = true;
-    }
-
-    string get_error(){
-        return error_details;
-    }
-
-    string get_text(){
-        return text;
-    }
-
-    int get_position(){
-        return pos;
-    }
-
-    char get_current_char(){
-        return current_char;
-    }
-
-    bool check_error(){
-        return error;
-    }
-
-    bool stop(){
-        return end_file;
-    }
-};
+#include "FileData.h"
 
 class Lexer{
     public:
@@ -126,7 +9,15 @@ class Lexer{
         file = FileData(text, filename);
     }
 
-    void make_keyword(){
+    string make_keyword(){
+        string keyword;
+
+        //Iterate as long as havent reached the end of line and it is a letter. If it is not a letter and varflag is active -> variable.
+        while (!file.stop() && (isalpha(file.get_current_char()))){
+            keyword += file.get_current_char();
+            ++file;
+        }
+        return keyword;
     }
 
     //Makes a number token
@@ -166,8 +57,16 @@ class Lexer{
 
         //checks every character until reached the end
         while (file.get_current_char()!=0){
+
+            //if current character is a digit -> create number token
             if (isdigit(file.get_current_char())){
                 file.add_token(make_number());
+            }
+
+            //if current character is alpha -> create a keyword token
+            else if (isalpha(file.get_current_char())){
+                string keyword = make_keyword();
+                file.add_token(Token(SYMBOLS.at(keyword)));
             }
             
             else {
@@ -190,7 +89,6 @@ class Lexer{
                 }
 
                 catch (string str_char){
-                    file.clear_tokens();
                     file.make_error("Invalid Character: " + str_char + '\n' + "Line 0, Column " + std::to_string(file.get_position() + 1));
                     return file;
                 } 
@@ -200,3 +98,10 @@ class Lexer{
         return file;
     }
 };
+
+//function that trys returned value from generate keyword
+
+
+void try_keyword(string keyword){
+    
+}
