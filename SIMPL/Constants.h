@@ -2,6 +2,8 @@
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
+#include <set>
+#include <functional>
 using std::string;
 
 const string DIGITS = "0123456789";

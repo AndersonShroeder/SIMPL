@@ -18,11 +18,11 @@ int main(){
         }
 
         else{
-            for (Token& tok : tokens){
-                tok.print();
-            }
-            std::cout << ast.str() << '\n';
+            std::cout << (*ast).str() << '\n';
         }
+        Interpreter interp = Interpreter(ast);
+        int out = interp.visit();
+        std::cout << out << '\n';
     }
 
     return 0;
