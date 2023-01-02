@@ -21,7 +21,7 @@ int main(){
             std::cout << (*ast).str() << '\n';
         }
         Interpreter interp = Interpreter(ast);
-        int out = interp.visit();
+        float out = interp.visit();
         std::cout << out << '\n';
     }
 

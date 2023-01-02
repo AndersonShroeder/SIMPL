@@ -12,7 +12,7 @@ class Node{
         return s;
     };
 
-    virtual int eval(){
+    virtual float eval(){
         int num = 0;
         return num;
     }
@@ -35,7 +35,7 @@ class NumberNode: public Node{
         return s;
     }
 
-    int eval(){
+    float eval(){
         return tok.get_value();
     }
 };
@@ -62,7 +62,7 @@ class BinOpNode: public Node{
         return s;   
     }
 
-    int eval(){
+    float eval(){
         //change to switch/case -> create enum wtih types
         if (op_tok.get_type() == "PLUS"){
             return (*left_node).eval() + (*right_node).eval();
@@ -73,8 +73,15 @@ class BinOpNode: public Node{
         else if (op_tok.get_type() == "DIV"){
             return (*left_node).eval() / (*right_node).eval();
         }
-        else{
+        else if (op_tok.get_type() == "MUL"){
             return (*left_node).eval() * (*right_node).eval();
+        }
+        else if (op_tok.get_type() == "EXP"){
+            return pow((*left_node).eval(), (*right_node).eval());
+        }
+        //only works for ints - error catch here
+        else if (op_tok.get_type() == "MOD"){
+            return int((*left_node).eval()) % int((*right_node).eval());
         }
     }
 
@@ -105,7 +112,7 @@ class Parser{
     }
 
     Node* parse(){
-        Node* res = expression();
+        Node* res = atom();
         return res;
     }
 
@@ -116,6 +123,13 @@ class Parser{
             ++(*this);;
             return node;
         }
+        else if ((*current_tok).get_type() == "LPAREN"){
+            ++(*this);
+            Node *node2 = atom();
+            ++(*this); // accounts for right paren
+            return node2;
+        }
+
         return (new NumberNode((*current_tok)));
     }
 
@@ -131,6 +145,11 @@ class Parser{
         return binary_operation(operands, &Parser::term);
     }
 
+    Node* atom(){
+        std::set<string> operands = {"EXP", "MOD"};
+        return binary_operation(operands, &Parser::expression);
+    }
+
     //Generalizes term/expr rules -> a set s is the accepted tokens to form either term/expr and func is term/expr function
     Node* binary_operation(std::set<string> s, Node* (Parser::*func)()){
         Node* left = (this->*func)();
@@ -138,6 +157,7 @@ class Parser{
         Token op_tok;
 
         while (s.find((*current_tok).get_type()) != s.end()){
+            std::cout << "meow" << '\n';
             op_tok = (*current_tok);
             ++(*this);
             right = (this->*func)();
@@ -147,4 +167,6 @@ class Parser{
         
         return left;
     }
+
+    
 };

@@ -31,7 +31,7 @@ class Token{
         return type;
     }
 
-    int get_value(){
+    float get_value(){
         return value;
     }
 };

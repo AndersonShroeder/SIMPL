@@ -11,7 +11,7 @@ class Interpreter{
         ast = ast_;
     }
 
-    int visit(){
+    float visit(){
         return (*ast).eval();
     };
 

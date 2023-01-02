@@ -1,6 +1,8 @@
 * -> 0 or more of whats before
 | -> or
 
+atom    : expr ((MOD|EXP) expr)
+
 expr    : term ((PLUS|MINUS) term)*
 
 term    : factor ((MUL|DIV) factor)*
@@ -8,6 +10,7 @@ term    : factor ((MUL|DIV) factor)*
 factor  : INT|FLOAT
         : (PLUS|MINUS) factor
         : LPAREN expr RPAREN
+
 
 Keywords -> variable types, function declaration, class declaration, loop declaration, conditionals, variable names
 Variable names -> must start with a letter and can only contain (a-z/A-Z/0-9/_)
