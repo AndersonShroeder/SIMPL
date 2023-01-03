@@ -43,6 +43,51 @@ class Parser{
         return res;
     }
 
+    Node* if_expr(std::vector<std::tuple<Node*, Node*>>& cases){
+        Node* else_case=NULL;
+        ++(*this);
+
+        if (!current_matches({"LPAREN"})){
+            std::cout << "MAKE ERROR - paren must enclose conditional (EL/IF)" << '\n';
+        }
+        Node* condition = expression(); // get if condition
+
+        if (!current_matches({"SOB"})){
+            std::cout << "MAKE ERROR - invalid if statement (EL/IF)" << '\n';
+        }
+
+        ++(*this);
+        Node* expr = expression(); // get expr to be executed
+
+        if (!current_matches({"EOB"})){
+            std::cout << "MAKE ERROR - missing enclosing braces (EL/IF)" << '\n';
+        }
+
+        ++(*this);
+        cases.push_back(std::make_tuple(condition, expr)); //add condition/expr to data struct -> if cond is true expr is evaluated
+
+        while (current_matches({"ELIF"})){
+            if_expr(cases);
+        }
+
+        if (current_matches({"ELSE"})){
+            ++(*this);
+            if (!current_matches({"SOB"})){
+                std::cout << "MAKE ERROR - invalid if statement (Else)" << '\n';
+            }
+            ++(*this);
+
+            else_case = expression();
+            ++(*this);
+            if (!current_matches({"EOB"})){
+                std::cout << "MAKE ERROR - missing enclosing braces (Else)" << '\n';
+            }
+            ++(*this);
+        }
+
+        return (new IfNode(cases, else_case));
+    }
+
 
     Node* atom(){
         if (current_matches({"TT_INT", "TT_FLOAT"})){
@@ -69,6 +114,11 @@ class Parser{
             
             ++(*this); // accounts for right paren
             return node;
+        }
+
+        else if (current_matches({"IF"})){
+            std::vector<std::tuple<Node*, Node*>> cases;
+            return if_expr(cases);
         }
 
         // no appropriate values

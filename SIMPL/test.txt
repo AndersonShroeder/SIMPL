@@ -1,0 +1,5 @@
+let x = 1
+let y = 0
+let z = 10
+
+if x - y < z: let z = x

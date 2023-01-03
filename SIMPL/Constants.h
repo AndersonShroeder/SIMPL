@@ -1,10 +1,12 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include<fstream>
 #include <cmath>
 #include <unordered_map>
 #include <set>
 #include <functional>
+#include <tuple>
 using std::string;
 
 const string DIGITS = "0123456789";
@@ -51,6 +53,10 @@ const std::unordered_map<string, string> SYMBOLS = {
     {"+=", "PLUSEQ"},
     {"++", "INCREMENT"},
     {"--", "DECREMENT"},
+    {":", "COLON"},
+    {"{", "SOB"}, //start of block
+    {"}", "EOB"}, //end of block
+    {";", "EOL"},
 };
 
 const std::unordered_map<string, string> KEYWORDS = {
@@ -59,6 +65,8 @@ const std::unordered_map<string, string> KEYWORDS = {
     {"not", "NOT"},
     {"fn", "FUNCTION"},
     {"if", "IF"},
+    {"elif", "ELIF"},
+    {"else", "ELSE"},
     {"while", "WHILE"},
     {"for", "FOR"},
     {"foreach", "FOREACH"},

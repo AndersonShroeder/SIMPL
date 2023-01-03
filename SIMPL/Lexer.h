@@ -35,6 +35,9 @@ class Lexer{
         while (!is_valid_keyword_char(*current_char) && !is_valid_number_char(*current_char) && *current_char != ' ' && !file.stop()){
             symbol += *current_char;
             ++file;
+            if (symbol == ")" || *current_char == '{'){
+                break;
+            }
         }
 
         try{

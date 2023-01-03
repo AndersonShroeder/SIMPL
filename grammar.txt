@@ -1,5 +1,6 @@
 * -> 0 or more of whats before
 | -> or
+? -> optional
 
 expr            : Keywork: variable identifier EQ expr
                 : comp-expr ((AND|OR) comp-expr)*
@@ -17,6 +18,10 @@ power           : atom (^ factor)*
 
 atom            : INT|FLOAT
                 : LPAREN expr RPAREN
+
+if-expr         : IF expr: expr
+                  (ELIF expr: expr)*
+                  (ELSE expr)?
 
 
 Keywords -> variable types, function declaration, class declaration, loop declaration, conditionals, variable names

@@ -1,4 +1,3 @@
-#include "Constants.h"
 #include "Lexer.h"
 
 class VariableTable{
@@ -86,7 +85,29 @@ class UnaryOpNode: public Node{
     }
 
     float eval(VariableTable& table){
+        if (op_tok.get_type() == "PLUS"){
+            return positive(table, node);
+        }
+        else if (op_tok.get_type() == "MINUS"){
+            return negative(table, node);
+        }
+        else if (op_tok.get_type() == "NOT"){
+            return negate(table, node);
+        }
+
         return 0;
+    }
+
+    float positive(VariableTable& table, Node* node){
+        return node->eval(table);
+    }
+
+    float negative(VariableTable& table, Node* node){
+        return (node->eval(table))*(-1);
+    }
+
+    float negate(VariableTable& table, Node* node){
+        return !(node->eval(table));
     }
 };
 
@@ -115,25 +136,95 @@ class BinOpNode: public Node{
     float eval(VariableTable& table){
         //change to switch/case -> create enum wtih types
         if (op_tok.get_type() == "PLUS"){
-            return (*left_node).eval(table) + (*right_node).eval(table);
+            return add(table, left_node, right_node);
         }
         else if (op_tok.get_type() == "MINUS"){
-            return (*left_node).eval(table) - (*right_node).eval(table);
+            return subtract(table, left_node, right_node);
         }
         else if (op_tok.get_type() == "DIV"){
-            return (*left_node).eval(table) / (*right_node).eval(table);
+            return divide(table, left_node, right_node);
         }
         else if (op_tok.get_type() == "MUL"){
-            return (*left_node).eval(table) * (*right_node).eval(table);
+            return multiply(table, left_node, right_node);
         }
         else if (op_tok.get_type() == "EXP"){
-            return pow((*left_node).eval(table), (*right_node).eval(table));
+            return exponentiate(table, left_node, right_node);
         }
         //only works for ints - error catch here
         else if (op_tok.get_type() == "MOD"){
-            return int((*left_node).eval(table)) % int((*right_node).eval(table));
+            return modulus(table, left_node, right_node);
+        }
+
+        //Logical Operators
+        else if (op_tok.get_type() == "EQUIV"){
+            return equals(table, left_node, right_node);
+        }
+        else if (op_tok.get_type() == "NOTEQ"){
+            return notequals(table, left_node, right_node);
+        }
+        else if (op_tok.get_type() == "GT"){
+            return greaterthan(table, left_node, right_node);
+        }
+        else if (op_tok.get_type() == "GTE"){
+            return greaterthaneq(table, left_node, right_node);
+        }
+        else if (op_tok.get_type() == "LT"){
+            return lessthan(table, left_node, right_node);
+        }
+        else if (op_tok.get_type() == "LTE"){
+            return lessthaneq(table, left_node, right_node);
         }
         return 0;
+    }
+
+    float add(VariableTable& table, Node* left, Node* right){
+        return (*left_node).eval(table) + (*right_node).eval(table);
+    }
+
+    float subtract(VariableTable& table, Node* left, Node* right){
+        return (*left_node).eval(table) - (*right_node).eval(table);
+    }
+
+    float divide(VariableTable& table, Node* left, Node* right){
+        return (*left_node).eval(table) / (*right_node).eval(table);
+    }
+
+    float multiply(VariableTable& table, Node* left, Node* right){
+        return (*left_node).eval(table) * (*right_node).eval(table);
+    }
+
+    float exponentiate(VariableTable& table, Node* left, Node* right){
+        return pow((*left_node).eval(table), (*right_node).eval(table));
+    }
+
+    float modulus(VariableTable& table, Node* left, Node* right){
+        return int((*left_node).eval(table)) % int((*right_node).eval(table));
+    }
+
+
+    //Logical comparisons
+    float equals(VariableTable& table, Node* left, Node* right){
+        return int((*left_node).eval(table)) == int((*right_node).eval(table));
+    }
+
+    float notequals(VariableTable& table, Node* left, Node* right){
+        return int((*left_node).eval(table)) != int((*right_node).eval(table));
+    }
+
+    float greaterthan(VariableTable& table, Node* left, Node* right){
+        return int((*left_node).eval(table)) > int((*right_node).eval(table));
+    }
+
+    float greaterthaneq(VariableTable& table, Node* left, Node* right){
+        return int((*left_node).eval(table)) >= int((*right_node).eval(table));
+    }
+
+    float lessthan(VariableTable& table, Node* left, Node* right){
+        return int((*left_node).eval(table)) < int((*right_node).eval(table));
+    }
+
+    float lessthaneq(VariableTable& table, Node* left, Node* right){
+        return int((*left_node).eval(table)) <= int((*right_node).eval(table));
     }
 };
 
@@ -178,5 +269,46 @@ class VarAccessNode: public Node{
 
     float eval(VariableTable& table){
         return std::stof(table.get(tok.get_value()));
+    }
+};
+
+class IfNode: public Node{
+    std::vector<std::tuple<Node*, Node*>> cases;
+    Node* else_case;
+
+    public:
+    IfNode(){};
+
+    IfNode(std::vector<std::tuple<Node*, Node*>> cases, Node* else_case){
+        this->cases = cases;
+        this->else_case = else_case;
+    }
+
+    string str(){
+        string s;
+        string type = "If ";
+        bool seen_if = false;
+        for (std::tuple<Node*, Node*> case_: cases){
+            if (seen_if){
+                type = "Elif ";
+            }
+            s += type + (*(std::get<0>(case_))).str() + " Then " + (*(std::get<1>(case_))).str() + '\n';
+            seen_if = true;
+        }
+        if (else_case != NULL){
+            s += "Else " + (*else_case).str();
+        }
+        return s;
+    }
+
+    float eval(VariableTable& table){
+        for (std::tuple<Node*, Node*> case_: cases){
+            if ((*(std::get<0>(case_))).eval(table)){
+                return (*(std::get<1>(case_))).eval(table);
+            }
+        }
+        if (else_case != NULL){
+            return (*else_case).eval(table);
+        }
     }
 };

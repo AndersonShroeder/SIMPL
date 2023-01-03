@@ -1,4 +1,6 @@
 #include <vector>
+#include "Constants.h"
+
 //Token class -> stores a tokenized value and the type associated
 class Token{
     string type;
