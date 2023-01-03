@@ -1,18 +1,21 @@
 #include "Parser.h"
+#include "Variables.h"
 
 
 class Interpreter{
     Node* ast;
+    VariableTable* table;
 
     public:
     Interpreter(){}
 
-    Interpreter(Node* ast_){
-        ast = ast_;
+    Interpreter(Node* ast, VariableTable* table){
+        this->ast = ast;
+        this->table = table;
     }
 
     float visit(){
-        return (*ast).eval();
+        return (*ast).eval(*table);
     };
 
 };

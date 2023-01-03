@@ -16,9 +16,22 @@ const string TT_PLUS = "+";
 const string TT_MINUS = "-";
 const string TT_LPAREN = "(";
 const string TT_RPAREN = ")";
+const string TT_ID = "ID";
+
+// const std::unordered_map<string, string> TOKEN_TYPES = {
+//     {"+", "PLUS"},
+//     {"-", "MINUS"},
+//     {"*", "MUL"},
+//     {"/", "DIV"},
+//     {"^", "EXP"},
+//     {"%", "MOD"},
+//     {"(", "LPAREN"},
+//     {")", "RPAREN"},
+// };
+
 
 //Use a map to generate tokens -> index into a map constant with current_char to find the associated value
-std::unordered_map<string, string> SYMBOLS = {
+const std::unordered_map<string, string> SYMBOLS = {
     {"+", "PLUS"},
     {"-", "MINUS"},
     {"*", "MUL"},
@@ -27,6 +40,23 @@ std::unordered_map<string, string> SYMBOLS = {
     {"%", "MOD"},
     {"(", "LPAREN"},
     {")", "RPAREN"},
+    {"=", "EQ"},
+    {"<", "LT"},
+    {">", "GT"},
+    {"<=", "LTE"},
+    {">=", "GTE"},
+    {"==", "EQUIV"},
+    {"!=", "NOTEQ"},
+    {"-=", "MINEQ"},
+    {"+=", "PLUSEQ"},
+    {"++", "INCREMENT"},
+    {"--", "DECREMENT"},
+};
+
+const std::unordered_map<string, string> KEYWORDS = {
+    {"and", "AND"},
+    {"or", "OR"},
+    {"not", "NOT"},
     {"fn", "FUNCTION"},
     {"if", "IF"},
     {"while", "WHILE"},
@@ -34,4 +64,12 @@ std::unordered_map<string, string> SYMBOLS = {
     {"foreach", "FOREACH"},
     {"class","CLASS"},
     {"let", "VARIABLE"}
+};
+
+const std::unordered_map<string, string> VARIABLE_TYPES = {
+    {"int", "FUNCTION"},
+    {"float", "IF"},
+    {"string", "WHILE"},
+    {"bool", "FOR"},
+    {"void", "FOREACH"},
 };

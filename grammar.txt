@@ -1,15 +1,22 @@
 * -> 0 or more of whats before
 | -> or
 
-atom    : expr ((MOD|EXP) expr)
+expr            : Keywork: variable identifier EQ expr
+                : comp-expr ((AND|OR) comp-expr)*
+                
+comp-expr       : NOT comp-expr
+                : arith-expr ((COMPARISON OPS) arith-expr)*
 
-expr    : term ((PLUS|MINUS) term)*
+arith-expr      : term ((PLUS|MINUS) term)*
 
-term    : factor ((MUL|DIV) factor)*
+term            : factor ((MUL|DIV) factor)*
 
-factor  : INT|FLOAT
-        : (PLUS|MINUS) factor
-        : LPAREN expr RPAREN
+factor          : (PLUS|MINUS) factor
+
+power           : atom (^ factor)*
+
+atom            : INT|FLOAT
+                : LPAREN expr RPAREN
 
 
 Keywords -> variable types, function declaration, class declaration, loop declaration, conditionals, variable names

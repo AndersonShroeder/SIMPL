@@ -1,21 +1,16 @@
-
 #include <vector>
-
-
-
-
 //Token class -> stores a tokenized value and the type associated
 class Token{
     string type;
-    float value;
+    string value;
 
     public:
     Token(){}
 
     //constructor
-    Token(string type_, float value_=0){
-        type = type_;
-        value = value_;
+    Token(string type, string value="0"){
+        this->type = type;
+        this->value = value;
     }
 
     //prints type and value of token
@@ -31,7 +26,7 @@ class Token{
         return type;
     }
 
-    float get_value(){
+    string get_value(){
         return value;
     }
 };
@@ -56,8 +51,8 @@ class FileData{
     public:
     FileData(){};
 
-    FileData(string text_, string filename){
-        text = text_;
+    FileData(string text, string filename){
+        this->text = text;
         ++(*this);
     }
 

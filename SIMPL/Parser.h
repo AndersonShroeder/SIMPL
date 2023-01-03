@@ -1,105 +1,25 @@
-#include "Constants.h"
-#include "Lexer.h"
+#include "Nodes.h"
 
-//base node class -> contains virtual string representation method
-class Node{
-
-    public:
-    Node(){};
-
-    virtual string str(){
-        string s = "";
-        return s;
-    };
-
-    virtual float eval(){
-        int num = 0;
-        return num;
-    }
-};
-
-//Number Node class
-class NumberNode: public Node{
-    Token tok;
-
-    public:
-    //default constructor
-    NumberNode(){}
-
-    NumberNode(Token& token){
-        tok = token;
-    }
-    
-    string str(){
-        string s = tok.str();
-        return s;
-    }
-
-    float eval(){
-        return tok.get_value();
-    }
-};
-
-//Operation Node for two values
-class BinOpNode: public Node{
-    Node* left_node;
-    Token op_tok;
-    Node* right_node;
-
-    public:
-    //default constructor
-    BinOpNode(){}
-
-    //constructor
-    BinOpNode(Node* left, Node* right, Token& op_tok_){
-        left_node = left;
-        right_node = right;
-        op_tok = op_tok_;
-    }
-
-    string str(){
-        string s = "(" + (*left_node).str() + ", " + op_tok.str() + ", " + (*right_node).str() + ")";
-        return s;   
-    }
-
-    float eval(){
-        //change to switch/case -> create enum wtih types
-        if (op_tok.get_type() == "PLUS"){
-            return (*left_node).eval() + (*right_node).eval();
-        }
-        else if (op_tok.get_type() == "MINUS"){
-            return (*left_node).eval() - (*right_node).eval();
-        }
-        else if (op_tok.get_type() == "DIV"){
-            return (*left_node).eval() / (*right_node).eval();
-        }
-        else if (op_tok.get_type() == "MUL"){
-            return (*left_node).eval() * (*right_node).eval();
-        }
-        else if (op_tok.get_type() == "EXP"){
-            return pow((*left_node).eval(), (*right_node).eval());
-        }
-        //only works for ints - error catch here
-        else if (op_tok.get_type() == "MOD"){
-            return int((*left_node).eval()) % int((*right_node).eval());
-        }
-    }
-
-};
+/////////////////////////////////////////////
+// ADD
+/////////////////////////////////////////////
+//  1. Add seperate Evaluation methods instead of just preforming the evaluation in the eval() method
+//  2. Add some form of context for error checking and variable assesment
 
 //Parser class -> generates AST
 class Parser{
     std::vector<Token> tokens;
-    int tok_idx = -1;
     Token* current_tok;
+    string current_type;
+    int tok_idx = -1;
 
     public:
     //default constructor
     Parser(){}
 
     //constructor
-    Parser(std::vector<Token> &tokens_){
-        tokens = tokens_;
+    Parser(std::vector<Token> &tokens){
+        this->tokens = tokens;
         ++(*this);
     }
 
@@ -108,65 +28,138 @@ class Parser{
         tok_idx += 1;
         if (tok_idx < tokens.size()){
             current_tok = &tokens.at(tok_idx);
+            current_type = (*current_tok).get_type();
         }
     }
 
+    // evaluates if current_type is in s
+    bool current_matches(std::set<string> s){
+        return (s.find(current_type) != s.end());
+    }
+
+
     Node* parse(){
-        Node* res = atom();
+        Node* res = expression();
         return res;
     }
 
-    //Generates Factors -> finds a number node that is either an int or float and returns it
-    Node* factor(){
-        if ((*current_tok).get_type() == TT_INT || (*current_tok).get_type() == TT_FLOAT){
+
+    Node* atom(){
+        if (current_matches({"TT_INT", "TT_FLOAT"})){
             Node *node = new NumberNode((*current_tok));
-            ++(*this);;
+            ++(*this);
+
             return node;
         }
-        else if ((*current_tok).get_type() == "LPAREN"){
+
+        else if (current_matches({"ID"})){
+            Node *node = new VarAccessNode((*current_tok));
             ++(*this);
-            Node *node2 = atom();
-            ++(*this); // accounts for right paren
-            return node2;
+
+            return node;
         }
 
-        return (new NumberNode((*current_tok)));
+        else if (current_matches({"LPAREN"})){
+            ++(*this);
+            Node *node = expression();
+
+            if (!current_matches({"RPAREN"})){
+                std::cout << "MAKE ERROR - No closing paranetheses" << '\n';
+            }
+            
+            ++(*this); // accounts for right paren
+            return node;
+        }
+
+        // no appropriate values
+        else{
+            //std::cout << "MAKE ERROR - No appropriate values" << '\n';
+            return (new NumberNode((*current_tok)));
+        }
+        
     }
+
+
+    //Generates Factors
+    Node* factor(){
+        std::set<string> operands = {"EXP"};
+        return binary_operation(operands, &Parser::atom, &Parser::factor);
+    }
+
 
     //Generates Terms
     Node* term(){
-        std::set<string> operands = {"MUL", "DIV"};
+        std::set<string> operands = {"MUL", "DIV", "MOD"};
         return binary_operation(operands, &Parser::factor);
     }
 
-    //Generates Expressions
-    Node* expression(){
+
+    Node* arith_expr(){
         std::set<string> operands = {"PLUS", "MINUS"};
         return binary_operation(operands, &Parser::term);
     }
 
-    Node* atom(){
-        std::set<string> operands = {"EXP", "MOD"};
-        return binary_operation(operands, &Parser::expression);
+
+    Node* comp_expr(){
+        Token tok;
+        if (current_matches({"NOT"})){
+            tok = *current_tok;
+            ++(*this);
+
+            Node* node = comp_expr();
+            return new UnaryOpNode(tok, node);
+        }
+        std::set<string> operands = {"EQUIV", "NOTEQ", "GT", "LT", "LTE", "GTE"};
+        return binary_operation(operands, &Parser::arith_expr);
+    }
+
+
+    //Generates Expressions
+    Node* expression(){
+        if (current_matches({"VARIABLE"})){
+            ++(*this);
+
+            // no variable name after declaring variable
+            if (!current_matches({"ID"})){
+                std::cout << "MAKE ERROR - No variable name after decleration" << '\n';
+            }
+            Token identifier = *current_tok;
+            ++(*this);
+
+            // no equal sign after declaring varaible and name
+
+            if (!current_matches({"EQ"})){
+                std::cout << "MAKE ERROR - No assignment of variable" << '\n';
+            }
+            ++(*this);
+            Node* node = expression();
+            return (new VarAssignNode(identifier.get_value(), node));
+
+        }
+        std::set<string> operands = {"AND", "OR"};
+        return binary_operation(operands, &Parser::comp_expr);
     }
 
     //Generalizes term/expr rules -> a set s is the accepted tokens to form either term/expr and func is term/expr function
-    Node* binary_operation(std::set<string> s, Node* (Parser::*func)()){
+    Node* binary_operation(std::set<string> s, Node* (Parser::*func)(), Node* (Parser::*func_b)() = NULL){
+
+        //no func_b -> use func for both left/right
+        if (func_b == NULL){
+            func_b = func;
+        }
+
         Node* left = (this->*func)();
         Node* right;
         Token op_tok;
 
-        while (s.find((*current_tok).get_type()) != s.end()){
-            std::cout << "meow" << '\n';
+        while (current_matches(s)){
             op_tok = (*current_tok);
             ++(*this);
-            right = (this->*func)();
+            right = (this->*func_b)();
             Node* node = new BinOpNode(left, right, op_tok);
             left = node;
         }
         
         return left;
     }
-
-    
 };
