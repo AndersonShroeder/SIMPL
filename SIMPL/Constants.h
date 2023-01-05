@@ -57,6 +57,7 @@ const std::unordered_map<string, string> SYMBOLS = {
     {"{", "SOB"}, //start of block
     {"}", "EOB"}, //end of block
     {";", "EOL"},
+    {",", "SEP"},
 };
 
 const std::unordered_map<string, string> KEYWORDS = {

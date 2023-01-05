@@ -312,3 +312,70 @@ class IfNode: public Node{
         }
     }
 };
+
+class ForNode: public Node
+{
+    Node* end_value_node;
+    Node* step_value_node;
+    Node* executed_node;
+    Node* var_assign;
+    VariableTable loop_scope_table;
+
+    public:
+    ForNode(){}
+
+    ForNode(Node* end_value_node, Node* step_value_node, Node* executed_node, Node* var_assign)
+    {
+    this->end_value_node = end_value_node;
+    this->step_value_node =step_value_node;
+    this->executed_node = executed_node;
+    this->var_assign = var_assign;
+    }
+
+    string str()
+    {
+        string s = "For (" + (*var_assign).str() + ", " + (*end_value_node).str() + ", " + (*step_value_node).str() + ") Do: " + (*executed_node).str();
+        return s;
+    }
+
+    float eval(VariableTable& table)
+    {  
+        //loop_scope_table = VariableTable(table);
+        (*var_assign).eval(table);
+        while ((*end_value_node).eval(table))
+        {
+            (*executed_node).eval(table);
+            (*step_value_node).eval(table);
+        }
+    }
+
+};
+
+class WhileNode: public Node
+{
+    Node* condition_node;
+    Node* body_node;
+
+    public:
+    WhileNode(){}
+
+    WhileNode(Node* condition_node, Node* body_node)
+    {
+        this->condition_node = condition_node;
+        this->body_node = body_node;
+    }
+
+    string str(){
+        string s = "While (" + (*condition_node).str() + ") Do: " + (*body_node).str();
+        return s;
+    }
+
+    float eval(VariableTable& table)
+    {
+        while ((*condition_node).eval(table))
+        {
+            (*body_node).eval(table);
+        }
+    }
+
+};

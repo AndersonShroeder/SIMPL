@@ -66,9 +66,9 @@ class Parser{
         ++(*this);
         cases.push_back(std::make_tuple(condition, expr)); //add condition/expr to data struct -> if cond is true expr is evaluated
 
-        while (current_matches({"ELIF"})){
-            if_expr(cases);
-        }
+        // while (current_matches({"ELIF"})){
+        //     if_expr(cases);
+        // }
 
         if (current_matches({"ELSE"})){
             ++(*this);
@@ -86,6 +86,45 @@ class Parser{
         }
 
         return (new IfNode(cases, else_case));
+    }
+
+    Node* for_expr()
+    {
+        ++(*this);
+        //check for LPAREN
+        ++(*this);
+        //check for VAR -> variable assignment in loop scope
+        Node* var = expression();
+        //check for comma
+        ++(*this);
+        //end cond
+        Node* end_condition = expression();
+        //check for comma
+        ++(*this);
+        Node* step_condition = expression();
+        //check for RPAREN
+        ++(*this);
+        //check for SOB
+        ++(*this);
+        Node* execute = expression();
+        //check for EOB
+
+        return new ForNode(end_condition, step_condition, execute, var);
+    }
+
+    Node* while_expr()
+    {
+        ++(*this);
+        //check for LPAREN
+        ++(*this);
+        Node* condition = expression();
+        //check for RPAREN
+        ++(*this);
+        //check for SOB
+        ++(*this);
+        Node* execute = expression();
+        //check for EOB
+        return new WhileNode(condition, execute);
     }
 
 
@@ -119,6 +158,16 @@ class Parser{
         else if (current_matches({"IF"})){
             std::vector<std::tuple<Node*, Node*>> cases;
             return if_expr(cases);
+        }
+
+        else if (current_matches({"FOR"})){
+            std::vector<std::tuple<Node*, Node*>> cases;
+            return for_expr();
+        }
+
+        else if (current_matches({"WHILE"})){
+            std::vector<std::tuple<Node*, Node*>> cases;
+            return while_expr();
         }
 
         // no appropriate values
