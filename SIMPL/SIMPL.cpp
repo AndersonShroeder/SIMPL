@@ -1,27 +1,47 @@
 
 #include "ConsCommands.h"
 #include <stdlib.h>
-#include <crtdbg.h>
 
+//TODO
 
+//Syntax enforcement
 
-string read_file(){
-    std::cout << "Type Filename: ";
+//Fix Run function
+
+//reading from file
+//  1. semi-colons mark end of expression
+//  2. 
+
+//Switch Parser/Nodes to stack allocation
+//  1. pass a default initialized Node 
+
+//Error Detection
+//  1. Some sort of wrapper that automatically checks for correct {}/()
+//  2. Log position of error
+//  3. Log line that produced error
+
+std::vector<string> read_file(){
+    
     string filename;
-    string input;
-    std::getline(std::cin, filename);
-    std::ifstream file;
-    file.open(filename);
+    std::vector<string> input;
+    string line;
 
-    if(file.fail()){
+    std::cout << "Type Filename: ";
+    std::getline(std::cin, filename);
+
+    std::ifstream file(filename);
+
+    if (file.fail()){
         std::cout << "File Failed To Open" << '\n';
-        return "FAIL";
+        return {};
     }
 
     else{
-        std::stringstream ss;
-        ss << file.rdbuf();
-        input = ss.str();
+        while (std::getline(file, line))
+        {
+            input.push_back(line);
+        }
+
         return input;
     }
 }
@@ -29,52 +49,42 @@ string read_file(){
 int main(){
     string input;
     string filename;
-    Commands coms = Commands();
+    ConsoleInterface console = ConsoleInterface();
     VariableTable global = VariableTable();
 
     while (true){
         std::cout << "SIMPL > ";
         std::getline(std::cin, input);
-        coms.check_inputs(input);
+        console.check_inputs(input);
 
-        if (coms.cont){
+        if (console.cont){
             continue;
-        }
-
-        if (input == "-readfile"){
-            string output = read_file();
-            if (output == "FAIL"){
-                continue;  
-            }
-            input = output;
         }
         
         FileData structure = run(input, filename);
-        auto tokens = structure.get_tokens();
-        auto error = structure.get_error();
+        std::vector<Token> tokens = structure.get_tokens();
         Parser parser = Parser(tokens);
         auto ast = parser.parse();
 
         if (structure.check_error()){
-            std::cout << error << '\n';
+            std::cout << structure.get_error() + '\n' + structure.get_position().str() << '\n';
         }
 
         else{
-            if (coms.toks){
+            if (console.toks){
                 for (Token tok: tokens){
                     tok.print();
                 }
             }
 
-            if (coms.syntax){
+            if (console.syntax){
                 std::cout << (*ast).str() << '\n';
             }
 
-            if (coms.interp){
+            if (console.interp){
                 Interpreter interp = Interpreter(ast, &global);
                 float out = interp.visit();
                 std::cout << out << '\n';
-                _CrtDumpMemoryLeaks();
                 delete ast;
             }
         }

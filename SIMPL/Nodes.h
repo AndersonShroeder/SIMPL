@@ -29,6 +29,7 @@ class VariableTable{
     }
 };
 
+
 //base node class -> contains virtual string representation method
 class Node{
     public:
@@ -77,10 +78,11 @@ class UnaryOpNode: public Node{
     UnaryOpNode(Token op_tok, Node* node){
         this->op_tok = op_tok;
         this->node = node;
+        std::cout << op_tok.str() << '\n';
     }
 
     string str(){
-        string s = op_tok.str() + (*node).str();
+        string s = op_tok.str() + " " + (*node).str();
         return s;
     }
 
@@ -93,6 +95,11 @@ class UnaryOpNode: public Node{
         }
         else if (op_tok.get_type() == "NOT"){
             return negate(table, node);
+        }
+
+        else if (op_tok.get_type() == "INCREMENT")
+        {
+            return increment(table, node);
         }
 
         return 0;
@@ -108,6 +115,12 @@ class UnaryOpNode: public Node{
 
     float negate(VariableTable& table, Node* node){
         return !(node->eval(table));
+    }
+
+    float increment(VariableTable& table, Node* node)
+    {
+        float val = (node->eval(table)) + 1;
+        return val;
     }
 };
 
@@ -378,4 +391,36 @@ class WhileNode: public Node
         }
     }
 
+};
+
+class FuncDefNode: public Node
+{
+    Token var_name_tok;
+    std::vector<Token> arg_name_toks;
+    Node* body_node;
+
+    public:
+    FuncDefNode(){};
+
+    FuncDefNode(Token var_name_tok, std::vector<Token> arg_name_toks, Node* body_node)
+    {
+        this->var_name_tok = var_name_tok;
+        this->arg_name_toks = arg_name_toks;
+        this->body_node = body_node;
+    }
+};
+
+class CallNode: public Node
+{
+    Node* node_to_call;
+    std::vector<Node*> arg_nodes;
+
+    public:
+    CallNode(){};
+
+    CallNode(Node* node_to_call, std::vector<Node*> arg_nodes)
+    {
+        this->node_to_call = node_to_call;
+        this->arg_nodes = arg_nodes;
+    }
 };

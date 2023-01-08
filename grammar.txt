@@ -11,18 +11,29 @@ comp-expr       : NOT comp-expr
 arith-expr      : term ((PLUS|MINUS) term)*
 
 term            : factor ((MUL|DIV) factor)*
-factor          : (PLUS|MINUS) factor
 
-power           : atom (^ factor)*
+factor          : (PLUS|MINUS) factor
+                : power
+
+power           : call (^ factor)*
+
+call            : atom (LPAREN (expr (SEP expr)*) RPAREN)?
 
 atom            : INT|FLOAT
                 : LPAREN expr RPAREN
+                : if-expr
+                : for-expr
+                : while-expr
+                : func-def
 
 if-expr         : IF expr: expr
                   (ELIF expr: expr)*
                   (ELSE expr)?
 
 for-expr        : for (ID EQ expr SEP expr SEP expr) expr
+
+func-def        : fn ID?
+                  LPAREN (ID (SEP ID)*){EXPR}
 
 
 Keywords -> variable types, function declaration, class declaration, loop declaration, conditionals, variable names

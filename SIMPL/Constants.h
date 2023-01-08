@@ -32,7 +32,15 @@ const string TT_ID = "ID";
 // };
 
 
-//Use a map to generate tokens -> index into a map constant with current_char to find the associated value
+const std::unordered_map<string, string> SINGLE_SYMBOLS = {
+    {"(", "LPAREN"},
+    {")", "RPAREN"},
+    {"{", "SOB"}, //start of block
+    {"}", "EOB"}, //end of block
+    {";", "EOL"},
+    {",", "SEP"},
+};
+
 const std::unordered_map<string, string> SYMBOLS = {
     {"+", "PLUS"},
     {"-", "MINUS"},

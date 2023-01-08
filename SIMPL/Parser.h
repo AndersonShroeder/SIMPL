@@ -6,6 +6,7 @@
 //  1. Add seperate Evaluation methods instead of just preforming the evaluation in the eval() method
 //  2. Add some form of context for error checking and variable assesment
 
+
 //Parser class -> generates AST
 class Parser{
     std::vector<Token> tokens;
@@ -18,13 +19,16 @@ class Parser{
     Parser(){}
 
     //constructor
-    Parser(std::vector<Token> &tokens){
+    Parser(std::vector<Token>& tokens)
+    {
         this->tokens = tokens;
         ++(*this);
     }
 
+
     //advance method -> moves to next token to be parsed
-    void operator ++(){
+    void operator ++()
+    {
         tok_idx += 1;
         if (tok_idx < tokens.size()){
             current_tok = &tokens.at(tok_idx);
@@ -32,18 +36,23 @@ class Parser{
         }
     }
 
+
     // evaluates if current_type is in s
-    bool current_matches(std::set<string> s){
+    bool current_matches(std::set<string> s)
+    {
         return (s.find(current_type) != s.end());
     }
 
 
-    Node* parse(){
+    Node* parse()
+    {
         Node* res = expression();
         return res;
     }
 
-    Node* if_expr(std::vector<std::tuple<Node*, Node*>>& cases){
+
+    Node* if_expr(std::vector<std::tuple<Node*, Node*>>& cases)
+    {
         Node* else_case=NULL;
         ++(*this);
 
@@ -66,9 +75,15 @@ class Parser{
         ++(*this);
         cases.push_back(std::make_tuple(condition, expr)); //add condition/expr to data struct -> if cond is true expr is evaluated
 
-        // while (current_matches({"ELIF"})){
-        //     if_expr(cases);
-        // }
+        while (current_matches({"ELIF"})){
+            ++(*this);
+            Node* condition = expression();
+            ++(*this);
+            Node* expr = expression();
+            ++(*this);
+            ++(*this);
+            cases.push_back(std::make_tuple(condition, expr));
+        }
 
         if (current_matches({"ELSE"})){
             ++(*this);
@@ -127,6 +142,76 @@ class Parser{
         return new WhileNode(condition, execute);
     }
 
+    Node* func_def()
+    {
+        Token var_name_tok;
+        std::vector<Token> arg_name_toks;
+        ++(*this);
+        if (current_matches({"ID"}))
+        {
+            var_name_tok = (*current_tok);
+            ++(*this);
+            //expect lParen
+        }
+        else
+        {
+            // set var_name_tok to null
+            //expected lparen
+        }
+
+        ++(*this);
+
+        if (current_matches({"ID"}))
+        {
+            arg_name_toks.push_back((*current_tok));
+            ++(*this);
+
+            while (current_matches({"SEP"}))
+            {
+                ++(*this);
+                //check for id
+                arg_name_toks.push_back((*current_tok));
+                ++(*this);
+            }
+        }
+        //check for rparen - expected rparen or comma
+        else
+        {
+            //check for rparen -> expected id or parent
+        }
+        ++(*this);
+        //check for curly braces
+        ++(*this);
+        Node* node_to_return = expression();
+        ++(*this);
+        //check for curly brace
+        return new FuncDefNode(var_name_tok, arg_name_toks, node_to_return);
+    }
+
+    Node* call()
+    {
+        Node* node = atom();
+        if (current_matches({"LPAREN"}))
+        {
+            ++(*this);
+            std::vector<Node*> args;
+            if (current_matches({"RPAREN"}))
+            {
+                ++(*this);
+            }
+            else
+            {
+                args.push_back(expression());
+                while (current_matches({"SEP"}))
+                {
+                    ++(*this);
+                    args.push_back(expression());
+                }
+            }
+            return new CallNode(node, args);
+        }
+        return node;
+    }
 
     Node* atom(){
         if (current_matches({"TT_INT", "TT_FLOAT"})){
@@ -170,6 +255,11 @@ class Parser{
             return while_expr();
         }
 
+        else if (current_matches({"FUNC"})){
+            std::vector<std::tuple<Node*, Node*>> cases;
+            return func_def();
+        }
+
         // no appropriate values
         else{
             //std::cout << "MAKE ERROR - No appropriate values" << '\n';
@@ -178,6 +268,11 @@ class Parser{
         
     }
 
+    Node* power()
+    {
+        std::set<string> operands = {"EXP"};
+        return binary_operation(operands, &Parser::call, &Parser::factor);
+    }
 
     //Generates Factors
     Node* factor(){
@@ -208,6 +303,7 @@ class Parser{
             Node* node = comp_expr();
             return new UnaryOpNode(tok, node);
         }
+
         std::set<string> operands = {"EQUIV", "NOTEQ", "GT", "LT", "LTE", "GTE"};
         return binary_operation(operands, &Parser::arith_expr);
     }

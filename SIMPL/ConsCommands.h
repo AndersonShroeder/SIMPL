@@ -1,24 +1,24 @@
 #include "run.h"
 
-void view_settings(bool& value, string name){
-    value = !value;
-    if (value){
-        std::cout << "=========================" << '\n' << name << " Enabled" << '\n' << "=========================" << '\n';
-    }
-    else{
-        std::cout << "=========================" << '\n' << name << " Disabled" << '\n' << "=========================" << '\n';
-    }
-}
-
-class Commands{
+class ConsoleInterface{
     public:
 
     bool toks = false;
     bool interp = true;
-    bool syntax = true;
+    bool syntax = false;
     bool cont = false;
 
-    Commands(){};
+    ConsoleInterface(){};
+
+    void view_settings(bool& value, string name){
+        value = !value;
+        if (value){
+            std::cout << "=========================" << '\n' << name << " Enabled" << '\n' << "=========================" << '\n';
+        }
+        else{
+            std::cout << "=========================" << '\n' << name << " Disabled" << '\n' << "=========================" << '\n';
+        }
+    }
 
     void check_inputs(string input){
         cont = false;
