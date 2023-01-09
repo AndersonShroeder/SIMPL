@@ -35,6 +35,11 @@ class Node{
     public:
     Node(){};
 
+    virtual ~Node()
+    {
+        std::cout << "Destruct" << '\n';
+    }
+
     virtual string str(){
         string s = "";
         return s;
@@ -70,12 +75,12 @@ class NumberNode: public Node{
 
 class UnaryOpNode: public Node{
     Token op_tok;
-    Node* node;
+    std::shared_ptr<Node> node;
 
     public:
     UnaryOpNode(){}
 
-    UnaryOpNode(Token op_tok, Node* node){
+    UnaryOpNode(Token op_tok, std::shared_ptr<Node> node){
         this->op_tok = op_tok;
         this->node = node;
         std::cout << op_tok.str() << '\n';
@@ -105,19 +110,19 @@ class UnaryOpNode: public Node{
         return 0;
     }
 
-    float positive(VariableTable& table, Node* node){
+    float positive(VariableTable& table, std::shared_ptr<Node> node){
         return node->eval(table);
     }
 
-    float negative(VariableTable& table, Node* node){
+    float negative(VariableTable& table, std::shared_ptr<Node> node){
         return (node->eval(table))*(-1);
     }
 
-    float negate(VariableTable& table, Node* node){
+    float negate(VariableTable& table, std::shared_ptr<Node> node){
         return !(node->eval(table));
     }
 
-    float increment(VariableTable& table, Node* node)
+    float increment(VariableTable& table, std::shared_ptr<Node> node)
     {
         float val = (node->eval(table)) + 1;
         return val;
@@ -126,16 +131,16 @@ class UnaryOpNode: public Node{
 
 //Operation Node for two values
 class BinOpNode: public Node{
-    Node* left_node;
+    std::shared_ptr<Node> left_node;
     Token op_tok;
-    Node* right_node;
+    std::shared_ptr<Node> right_node;
 
     public:
     //default constructor
     BinOpNode(){}
 
     //constructor
-    BinOpNode(Node* left, Node* right, Token& op_tok){
+    BinOpNode(std::shared_ptr<Node> left, std::shared_ptr<Node> right, Token& op_tok){
         left_node = left;
         right_node = right;
         this->op_tok = op_tok;
@@ -190,65 +195,65 @@ class BinOpNode: public Node{
         return 0;
     }
 
-    float add(VariableTable& table, Node* left, Node* right){
+    float add(VariableTable& table, std::shared_ptr<Node> left, std::shared_ptr<Node> right){
         return (*left_node).eval(table) + (*right_node).eval(table);
     }
 
-    float subtract(VariableTable& table, Node* left, Node* right){
+    float subtract(VariableTable& table, std::shared_ptr<Node> left, std::shared_ptr<Node> right){
         return (*left_node).eval(table) - (*right_node).eval(table);
     }
 
-    float divide(VariableTable& table, Node* left, Node* right){
+    float divide(VariableTable& table, std::shared_ptr<Node> left, std::shared_ptr<Node> right){
         return (*left_node).eval(table) / (*right_node).eval(table);
     }
 
-    float multiply(VariableTable& table, Node* left, Node* right){
+    float multiply(VariableTable& table, std::shared_ptr<Node> left, std::shared_ptr<Node> right){
         return (*left_node).eval(table) * (*right_node).eval(table);
     }
 
-    float exponentiate(VariableTable& table, Node* left, Node* right){
+    float exponentiate(VariableTable& table, std::shared_ptr<Node> left, std::shared_ptr<Node> right){
         return pow((*left_node).eval(table), (*right_node).eval(table));
     }
 
-    float modulus(VariableTable& table, Node* left, Node* right){
+    float modulus(VariableTable& table, std::shared_ptr<Node> left, std::shared_ptr<Node> right){
         return int((*left_node).eval(table)) % int((*right_node).eval(table));
     }
 
 
     //Logical comparisons
-    float equals(VariableTable& table, Node* left, Node* right){
+    float equals(VariableTable& table, std::shared_ptr<Node> left, std::shared_ptr<Node> right){
         return int((*left_node).eval(table)) == int((*right_node).eval(table));
     }
 
-    float notequals(VariableTable& table, Node* left, Node* right){
+    float notequals(VariableTable& table, std::shared_ptr<Node> left, std::shared_ptr<Node> right){
         return int((*left_node).eval(table)) != int((*right_node).eval(table));
     }
 
-    float greaterthan(VariableTable& table, Node* left, Node* right){
+    float greaterthan(VariableTable& table, std::shared_ptr<Node> left, std::shared_ptr<Node> right){
         return int((*left_node).eval(table)) > int((*right_node).eval(table));
     }
 
-    float greaterthaneq(VariableTable& table, Node* left, Node* right){
+    float greaterthaneq(VariableTable& table, std::shared_ptr<Node> left, std::shared_ptr<Node> right){
         return int((*left_node).eval(table)) >= int((*right_node).eval(table));
     }
 
-    float lessthan(VariableTable& table, Node* left, Node* right){
+    float lessthan(VariableTable& table, std::shared_ptr<Node> left, std::shared_ptr<Node> right){
         return int((*left_node).eval(table)) < int((*right_node).eval(table));
     }
 
-    float lessthaneq(VariableTable& table, Node* left, Node* right){
+    float lessthaneq(VariableTable& table, std::shared_ptr<Node> left, std::shared_ptr<Node> right){
         return int((*left_node).eval(table)) <= int((*right_node).eval(table));
     }
 };
 
 class VarAssignNode: public Node{
     string name;
-    Node* value;
+    std::shared_ptr<Node> value;
 
     public:
     VarAssignNode();
 
-    VarAssignNode(string name, Node* value){
+    VarAssignNode(string name, std::shared_ptr<Node> value){
         this->name = name;
         this->value = value;
     }
@@ -286,13 +291,13 @@ class VarAccessNode: public Node{
 };
 
 class IfNode: public Node{
-    std::vector<std::tuple<Node*, Node*>> cases;
-    Node* else_case;
+    std::vector<std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>>> cases;
+    std::shared_ptr<Node> else_case;
 
     public:
     IfNode(){};
 
-    IfNode(std::vector<std::tuple<Node*, Node*>> cases, Node* else_case){
+    IfNode(std::vector<std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>>> cases, std::shared_ptr<Node> else_case){
         this->cases = cases;
         this->else_case = else_case;
     }
@@ -301,7 +306,7 @@ class IfNode: public Node{
         string s;
         string type = "If ";
         bool seen_if = false;
-        for (std::tuple<Node*, Node*> case_: cases){
+        for (std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>> case_: cases){
             if (seen_if){
                 type = "Elif ";
             }
@@ -315,7 +320,7 @@ class IfNode: public Node{
     }
 
     float eval(VariableTable& table){
-        for (std::tuple<Node*, Node*> case_: cases){
+        for (std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>> case_: cases){
             if ((*(std::get<0>(case_))).eval(table)){
                 return (*(std::get<1>(case_))).eval(table);
             }
@@ -328,16 +333,16 @@ class IfNode: public Node{
 
 class ForNode: public Node
 {
-    Node* end_value_node;
-    Node* step_value_node;
-    Node* executed_node;
-    Node* var_assign;
+    std::shared_ptr<Node> end_value_node;
+    std::shared_ptr<Node> step_value_node;
+    std::shared_ptr<Node> executed_node;
+    std::shared_ptr<Node> var_assign;
     VariableTable loop_scope_table;
 
     public:
     ForNode(){}
 
-    ForNode(Node* end_value_node, Node* step_value_node, Node* executed_node, Node* var_assign)
+    ForNode(std::shared_ptr<Node> end_value_node, std::shared_ptr<Node> step_value_node, std::shared_ptr<Node> executed_node, std::shared_ptr<Node> var_assign)
     {
     this->end_value_node = end_value_node;
     this->step_value_node =step_value_node;
@@ -366,13 +371,13 @@ class ForNode: public Node
 
 class WhileNode: public Node
 {
-    Node* condition_node;
-    Node* body_node;
+    std::shared_ptr<Node> condition_node;
+    std::shared_ptr<Node> body_node;
 
     public:
     WhileNode(){}
 
-    WhileNode(Node* condition_node, Node* body_node)
+    WhileNode(std::shared_ptr<Node> condition_node, std::shared_ptr<Node> body_node)
     {
         this->condition_node = condition_node;
         this->body_node = body_node;
@@ -397,12 +402,12 @@ class FuncDefNode: public Node
 {
     Token var_name_tok;
     std::vector<Token> arg_name_toks;
-    Node* body_node;
+    std::shared_ptr<Node> body_node;
 
     public:
     FuncDefNode(){};
 
-    FuncDefNode(Token var_name_tok, std::vector<Token> arg_name_toks, Node* body_node)
+    FuncDefNode(Token var_name_tok, std::vector<Token> arg_name_toks, std::shared_ptr<Node> body_node)
     {
         this->var_name_tok = var_name_tok;
         this->arg_name_toks = arg_name_toks;
@@ -412,13 +417,13 @@ class FuncDefNode: public Node
 
 class CallNode: public Node
 {
-    Node* node_to_call;
-    std::vector<Node*> arg_nodes;
+    std::shared_ptr<Node> node_to_call;
+    std::vector<std::shared_ptr<Node>> arg_nodes;
 
     public:
     CallNode(){};
 
-    CallNode(Node* node_to_call, std::vector<Node*> arg_nodes)
+    CallNode(std::shared_ptr<Node> node_to_call, std::vector<std::shared_ptr<Node>> arg_nodes)
     {
         this->node_to_call = node_to_call;
         this->arg_nodes = arg_nodes;

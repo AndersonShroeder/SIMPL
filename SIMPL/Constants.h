@@ -7,6 +7,7 @@
 #include <set>
 #include <functional>
 #include <tuple>
+#include <memory>
 using std::string;
 
 const string DIGITS = "0123456789";

@@ -3,13 +3,13 @@
 
 
 class Interpreter{
-    Node* ast;
+    std::shared_ptr<Node> ast;
     VariableTable* table;
 
     public:
     Interpreter(){}
 
-    Interpreter(Node* ast, VariableTable* table){
+    Interpreter(std::shared_ptr<Node> ast, VariableTable* table){
         this->ast = ast;
         this->table = table;
     }

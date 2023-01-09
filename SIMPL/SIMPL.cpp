@@ -85,7 +85,6 @@ int main(){
                 Interpreter interp = Interpreter(ast, &global);
                 float out = interp.visit();
                 std::cout << out << '\n';
-                delete ast;
             }
         }
     }

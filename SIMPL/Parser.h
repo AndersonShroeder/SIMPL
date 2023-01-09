@@ -44,29 +44,29 @@ class Parser{
     }
 
 
-    Node* parse()
+    std::shared_ptr<Node> parse()
     {
-        Node* res = expression();
+        std::shared_ptr<Node> res = expression();
         return res;
     }
 
 
-    Node* if_expr(std::vector<std::tuple<Node*, Node*>>& cases)
+    std::shared_ptr<Node> if_expr(std::vector<std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>>>& cases)
     {
-        Node* else_case=NULL;
+        std::shared_ptr<Node> else_case=NULL;
         ++(*this);
 
         if (!current_matches({"LPAREN"})){
             std::cout << "MAKE ERROR - paren must enclose conditional (EL/IF)" << '\n';
         }
-        Node* condition = expression(); // get if condition
+        std::shared_ptr<Node> condition = expression(); // get if condition
 
         if (!current_matches({"SOB"})){
             std::cout << "MAKE ERROR - invalid if statement (EL/IF)" << '\n';
         }
 
         ++(*this);
-        Node* expr = expression(); // get expr to be executed
+        std::shared_ptr<Node> expr = expression(); // get expr to be executed
 
         if (!current_matches({"EOB"})){
             std::cout << "MAKE ERROR - missing enclosing braces (EL/IF)" << '\n';
@@ -77,9 +77,9 @@ class Parser{
 
         while (current_matches({"ELIF"})){
             ++(*this);
-            Node* condition = expression();
+            std::shared_ptr<Node> condition = expression();
             ++(*this);
-            Node* expr = expression();
+            std::shared_ptr<Node> expr = expression();
             ++(*this);
             ++(*this);
             cases.push_back(std::make_tuple(condition, expr));
@@ -100,49 +100,49 @@ class Parser{
             ++(*this);
         }
 
-        return (new IfNode(cases, else_case));
+        return (std::make_unique<IfNode>(cases, else_case));
     }
 
-    Node* for_expr()
+    std::shared_ptr<Node> for_expr()
     {
         ++(*this);
         //check for LPAREN
         ++(*this);
         //check for VAR -> variable assignment in loop scope
-        Node* var = expression();
+        std::shared_ptr<Node> var = expression();
         //check for comma
         ++(*this);
         //end cond
-        Node* end_condition = expression();
+        std::shared_ptr<Node> end_condition = expression();
         //check for comma
         ++(*this);
-        Node* step_condition = expression();
+        std::shared_ptr<Node> step_condition = expression();
         //check for RPAREN
         ++(*this);
         //check for SOB
         ++(*this);
-        Node* execute = expression();
+        std::shared_ptr<Node> execute = expression();
         //check for EOB
 
-        return new ForNode(end_condition, step_condition, execute, var);
+        return std::make_unique<ForNode>(end_condition, step_condition, execute, var);
     }
 
-    Node* while_expr()
+    std::shared_ptr<Node> while_expr()
     {
         ++(*this);
         //check for LPAREN
         ++(*this);
-        Node* condition = expression();
+        std::shared_ptr<Node> condition = expression();
         //check for RPAREN
         ++(*this);
         //check for SOB
         ++(*this);
-        Node* execute = expression();
+        std::shared_ptr<Node> execute = expression();
         //check for EOB
-        return new WhileNode(condition, execute);
+        return std::make_unique<WhileNode>(condition, execute);
     }
 
-    Node* func_def()
+    std::shared_ptr<Node> func_def()
     {
         Token var_name_tok;
         std::vector<Token> arg_name_toks;
@@ -182,19 +182,19 @@ class Parser{
         ++(*this);
         //check for curly braces
         ++(*this);
-        Node* node_to_return = expression();
+        std::shared_ptr<Node> node_to_return = expression();
         ++(*this);
         //check for curly brace
-        return new FuncDefNode(var_name_tok, arg_name_toks, node_to_return);
+        return std::make_unique<FuncDefNode>(var_name_tok, arg_name_toks, node_to_return);
     }
 
-    Node* call()
+    std::shared_ptr<Node> call()
     {
-        Node* node = atom();
+        std::shared_ptr<Node> node = atom();
         if (current_matches({"LPAREN"}))
         {
             ++(*this);
-            std::vector<Node*> args;
+            std::vector<std::shared_ptr<Node>> args;
             if (current_matches({"RPAREN"}))
             {
                 ++(*this);
@@ -208,21 +208,21 @@ class Parser{
                     args.push_back(expression());
                 }
             }
-            return new CallNode(node, args);
+            return std::make_unique<CallNode>(node, args);
         }
         return node;
     }
 
-    Node* atom(){
+    std::shared_ptr<Node> atom(){
         if (current_matches({"TT_INT", "TT_FLOAT"})){
-            Node *node = new NumberNode((*current_tok));
+            std::shared_ptr<Node> node = std::make_unique<NumberNode>((*current_tok));
             ++(*this);
 
             return node;
         }
 
         else if (current_matches({"ID"})){
-            Node *node = new VarAccessNode((*current_tok));
+            std::shared_ptr<Node> node = std::make_unique<VarAccessNode>((*current_tok));
             ++(*this);
 
             return node;
@@ -230,7 +230,7 @@ class Parser{
 
         else if (current_matches({"LPAREN"})){
             ++(*this);
-            Node *node = expression();
+            std::shared_ptr<Node> node = expression();
 
             if (!current_matches({"RPAREN"})){
                 std::cout << "MAKE ERROR - No closing paranetheses" << '\n';
@@ -241,67 +241,67 @@ class Parser{
         }
 
         else if (current_matches({"IF"})){
-            std::vector<std::tuple<Node*, Node*>> cases;
+            std::vector<std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>>> cases;
             return if_expr(cases);
         }
 
         else if (current_matches({"FOR"})){
-            std::vector<std::tuple<Node*, Node*>> cases;
+            std::vector<std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>>> cases;
             return for_expr();
         }
 
         else if (current_matches({"WHILE"})){
-            std::vector<std::tuple<Node*, Node*>> cases;
+            std::vector<std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>>> cases;
             return while_expr();
         }
 
         else if (current_matches({"FUNC"})){
-            std::vector<std::tuple<Node*, Node*>> cases;
+            std::vector<std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>>> cases;
             return func_def();
         }
 
         // no appropriate values
         else{
             //std::cout << "MAKE ERROR - No appropriate values" << '\n';
-            return (new NumberNode((*current_tok)));
+            return (std::make_unique<NumberNode>((*current_tok)));
         }
         
     }
 
-    Node* power()
+    std::shared_ptr<Node> power()
     {
         std::set<string> operands = {"EXP"};
         return binary_operation(operands, &Parser::call, &Parser::factor);
     }
 
     //Generates Factors
-    Node* factor(){
+    std::shared_ptr<Node> factor(){
         std::set<string> operands = {"EXP"};
         return binary_operation(operands, &Parser::atom, &Parser::factor);
     }
 
 
     //Generates Terms
-    Node* term(){
+    std::shared_ptr<Node> term(){
         std::set<string> operands = {"MUL", "DIV", "MOD"};
         return binary_operation(operands, &Parser::factor);
     }
 
 
-    Node* arith_expr(){
+    std::shared_ptr<Node> arith_expr(){
         std::set<string> operands = {"PLUS", "MINUS"};
         return binary_operation(operands, &Parser::term);
     }
 
 
-    Node* comp_expr(){
+    std::shared_ptr<Node> comp_expr(){
         Token tok;
         if (current_matches({"NOT"})){
             tok = *current_tok;
             ++(*this);
 
-            Node* node = comp_expr();
-            return new UnaryOpNode(tok, node);
+            std::shared_ptr<Node> node = comp_expr();
+            return std::make_unique<UnaryOpNode>(tok, node);
         }
 
         std::set<string> operands = {"EQUIV", "NOTEQ", "GT", "LT", "LTE", "GTE"};
@@ -310,7 +310,7 @@ class Parser{
 
 
     //Generates Expressions
-    Node* expression(){
+    std::shared_ptr<Node> expression(){
         if (current_matches({"VARIABLE"})){
             ++(*this);
 
@@ -327,8 +327,8 @@ class Parser{
                 std::cout << "MAKE ERROR - No assignment of variable" << '\n';
             }
             ++(*this);
-            Node* node = expression();
-            return (new VarAssignNode(identifier.get_value(), node));
+            std::shared_ptr<Node> node = expression();
+            return (std::make_unique<VarAssignNode>(identifier.get_value(), node));
 
         }
         std::set<string> operands = {"AND", "OR"};
@@ -336,22 +336,22 @@ class Parser{
     }
 
     //Generalizes term/expr rules -> a set s is the accepted tokens to form either term/expr and func is term/expr function
-    Node* binary_operation(std::set<string> s, Node* (Parser::*func)(), Node* (Parser::*func_b)() = NULL){
+    std::shared_ptr<Node> binary_operation(std::set<string> s, std::shared_ptr<Node> (Parser::*func)(), std::shared_ptr<Node> (Parser::*func_b)() = NULL){
 
         //no func_b -> use func for both left/right
         if (func_b == NULL){
             func_b = func;
         }
 
-        Node* left = (this->*func)();
-        Node* right;
+        std::shared_ptr<Node> left = (this->*func)();
+        std::shared_ptr<Node> right;
         Token op_tok;
 
         while (current_matches(s)){
             op_tok = (*current_tok);
             ++(*this);
             right = (this->*func_b)();
-            Node* node = new BinOpNode(left, right, op_tok);
+            std::shared_ptr<Node> node = std::make_unique<BinOpNode>(left, right, op_tok);
             left = node;
         }
         
