@@ -20,31 +20,7 @@
 //  2. Log position of error
 //  3. Log line that produced error
 
-std::vector<string> read_file(){
-    
-    string filename;
-    std::vector<string> input;
-    string line;
 
-    std::cout << "Type Filename: ";
-    std::getline(std::cin, filename);
-
-    std::ifstream file(filename);
-
-    if (file.fail()){
-        std::cout << "File Failed To Open" << '\n';
-        return {};
-    }
-
-    else{
-        while (std::getline(file, line))
-        {
-            input.push_back(line);
-        }
-
-        return input;
-    }
-}
 
 int main(){
     string input;

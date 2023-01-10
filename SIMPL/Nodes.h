@@ -1,27 +1,65 @@
 #include "Lexer.h"
 
 class VariableTable{
-    std::unordered_map<string, string> symbols = {};
-    std::unordered_map<string, string> parent;
-
     public:
+    std::unordered_map<string, string> symbols = {};
+    VariableTable* parent=NULL;
+
     VariableTable(){}
 
-    string get(string name){
-        if (symbols.count(name)){
-            return symbols.at(name);
-        }
-        else if (parent.count(name)){
-            return symbols.at(name);
-        }
-        else{
-            std::cout << "MAKE ERROR - variable not in table" << '\n';
-            return "";
-        }
+    VariableTable(VariableTable* parent)
+    {
+        this->parent = parent;
     }
 
-    void set(string name, string value){
-        symbols[name] = value;
+    // checks if the variable name is in local scope, if not go up through scopes and check
+    string get(string name){
+        if (contains(name)){
+            return symbols.at(name);
+        }
+
+        else if (parent != NULL)
+        {
+            return parent->get(name);
+        }
+
+        std::cout << "MAKE ERROR - variable not in table" << '\n';
+        return "";
+        
+    }
+
+    VariableTable* check_for_var(string name){
+        if (contains(name)){
+            return this;
+        }
+
+        else if (parent != NULL)
+        {
+            return parent->check_for_var(name);
+        }
+
+        return NULL;
+        
+    }
+
+
+    bool contains(string name)
+    {
+        return symbols.count(name);
+    }
+
+
+    void set(string name, string value)
+    {
+        VariableTable* ptr = check_for_var(name);
+        if (ptr)
+        {
+            ptr->symbols[name] = value;
+        }
+        else
+        {
+            symbols[name] = value;
+        }
     }
 
     void remove(string name){
@@ -35,10 +73,10 @@ class Node{
     public:
     Node(){};
 
-    virtual ~Node()
-    {
-        std::cout << "Destruct" << '\n';
-    }
+    // virtual ~Node()
+    // {
+    //     std::cout << "Destruct" << '\n';
+    // }
 
     virtual string str(){
         string s = "";
@@ -83,7 +121,6 @@ class UnaryOpNode: public Node{
     UnaryOpNode(Token op_tok, std::shared_ptr<Node> node){
         this->op_tok = op_tok;
         this->node = node;
-        std::cout << op_tok.str() << '\n';
     }
 
     string str(){
@@ -286,7 +323,7 @@ class VarAccessNode: public Node{
     }
 
     float eval(VariableTable& table){
-        return std::stof(table.get(tok.get_value()));
+        return stof(table.get(tok.get_value()));
     }
 };
 
@@ -300,7 +337,7 @@ class IfNode: public Node{
     IfNode(std::vector<std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>>> cases, std::shared_ptr<Node> else_case){
         this->cases = cases;
         this->else_case = else_case;
-    }
+    } 
 
     string str(){
         string s;
@@ -428,4 +465,90 @@ class CallNode: public Node
         this->node_to_call = node_to_call;
         this->arg_nodes = arg_nodes;
     }
+};
+
+
+class Argument: public Node
+{
+    //contain the expressions to be executed in scope
+    std::vector<std::shared_ptr<Node>> arguments;
+
+    //contain scope variables
+    VariableTable scope_table;
+
+    public:
+
+    Argument(std::vector<std::shared_ptr<Node>> arguments)
+    {
+        this->arguments = arguments;
+    }
+
+    string str()
+    {
+        string s;
+        s += "Arguments (\n";
+
+        for (auto i: arguments)
+        {
+            s += i->str();
+            s += '\n';
+        }
+        s += ")";
+        return s;
+    }
+
+    float eval(VariableTable& table)
+    {
+        scope_table = VariableTable(&table);
+        for (auto i: arguments)
+        {
+            i->eval(scope_table);
+        }
+
+        return 0;
+    }
+};
+
+//class to scope expressions
+class Scope : public Node
+{
+    //contain the expressions to be executed in scope
+    std::vector<std::shared_ptr<Node>> expressions;
+
+    //contain scope variables
+    VariableTable scope_table;
+
+    public:
+    
+    //No default init because we must have expressions
+    Scope(std::vector<std::shared_ptr<Node>> expressions)
+    {
+        this->expressions = expressions;
+    }
+
+    string str()
+    {
+        string s;
+        s += "Scope {\n";
+
+        for (auto i: expressions)
+        {
+            s += i->str();
+            s += '\n';
+        }
+        s += "}";
+        return s;
+    }
+
+    float eval(VariableTable& table)
+    {
+        scope_table = VariableTable(&table);
+        for (auto i: expressions)
+        {
+            i->eval(scope_table);
+        }
+
+        return 0;
+    }
+
 };

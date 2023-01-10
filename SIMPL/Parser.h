@@ -127,6 +127,19 @@ class Parser{
         return std::make_unique<ForNode>(end_condition, step_condition, execute, var);
     }
 
+    void check_paren()
+    {
+        ++(*this);
+        //check for LPAREN
+        ++(*this);
+        while (current_matches({"SEP"}))
+        {
+
+        }
+
+
+    }
+
     std::shared_ptr<Node> while_expr()
     {
         ++(*this);
@@ -308,6 +321,42 @@ class Parser{
         return binary_operation(operands, &Parser::arith_expr);
     }
 
+    std::shared_ptr<Node> make_scope()
+    {
+        std::vector<std::shared_ptr<Node>> expressions;
+        expressions.push_back(expression());
+
+        // if the scope expression is correct -> this will always return
+        while (current_matches({"EOL"}))
+        {
+            ++(*this);
+
+            if (current_matches({"EOB"}))
+            {
+                ++(*this);
+                return std::make_unique<Scope>(expressions);
+            }
+
+            expressions.push_back(expression());
+
+            //No "EOL"
+
+            if (!current_matches({"EOL"}))
+            {
+                std::cout << "Expected ;\n";
+            }
+        }
+
+        
+
+        if (current_matches({"EOB"}))
+        {
+            std::cout << "Expected }\n";
+        }
+
+        //Return -> if this statement is ever reached, there is an error
+        return std::make_unique<Scope>(expressions);
+    }
 
     //Generates Expressions
     std::shared_ptr<Node> expression(){
@@ -331,6 +380,14 @@ class Parser{
             return (std::make_unique<VarAssignNode>(identifier.get_value(), node));
 
         }
+
+        //If there is a scope we must create a scoped node
+        if (current_matches({"SOB"}))
+        {
+            ++(*this);
+            return make_scope();
+        }
+
         std::set<string> operands = {"AND", "OR"};
         return binary_operation(operands, &Parser::comp_expr);
     }

@@ -20,7 +20,7 @@ class ConsoleInterface{
         }
     }
 
-    void check_inputs(string input){
+    void check_inputs(string& input){
         cont = false;
         if (input == "-t"){
             view_settings(toks, "Token View");
@@ -41,13 +41,41 @@ class ConsoleInterface{
             cont = true;
         }
 
-        // if (input == "-readfile"){
-        //     string output = read_file();
-        //     if (output == "FAIL"){
-        //         cont = true;
-        //     }
-        //     input = output;
-        // }
+        if (input == "-readfile"){
+            string output = read_file();
+            if (output == "FAIL"){
+                cont = true;
+            }
+            input = output;
+        }
+    }
+
+    string read_file()
+    {
+        string filename;
+        string input;
+        string line;
+
+        std::cout << "Type Filename: ";
+        std::getline(std::cin, filename);
+
+        std::ifstream file(filename);
+
+        if (file.fail())
+        {
+            std::cout << "File Failed To Open" << '\n';
+            return "FAIL";
+        }
+
+        else
+        {
+            while (std::getline(file, line))
+            {
+                input+=line;
+            }
+
+            return input;
+        }
     }
 };
     
