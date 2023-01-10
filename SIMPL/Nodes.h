@@ -327,6 +327,90 @@ class VarAccessNode: public Node{
     }
 };
 
+class Argument: public Node
+{
+    //contain the expressions to be executed in scope
+    std::vector<std::shared_ptr<Node>> arguments;
+
+    //contain scope variables
+    VariableTable scope_table;
+
+    public:
+
+    Argument(std::vector<std::shared_ptr<Node>> arguments)
+    {
+        this->arguments = arguments;
+    }
+
+    string str()
+    {
+        string s;
+        s += "Arguments (\n";
+
+        for (auto i: arguments)
+        {
+            s += i->str();
+            s += '\n';
+        }
+        s += ")";
+        return s;
+    }
+
+    float eval(VariableTable& table)
+    {
+        scope_table = VariableTable(&table);
+        for (auto i: arguments)
+        {
+            i->eval(scope_table);
+        }
+
+        return 0;
+    }
+};
+
+//class to scope expressions
+class Scope : public Node
+{
+    //contain the expressions to be executed in scope
+    std::vector<std::shared_ptr<Node>> expressions;
+
+    //contain scope variables
+    VariableTable scope_table;
+
+    public:
+    
+    //No default init because we must have expressions
+    Scope(std::vector<std::shared_ptr<Node>> expressions)
+    {
+        this->expressions = expressions;
+    }
+
+    string str()
+    {
+        string s;
+        s += "Scope {\n";
+
+        for (auto i: expressions)
+        {
+            s += i->str();
+            s += '\n';
+        }
+        s += "}";
+        return s;
+    }
+
+    float eval(VariableTable& table)
+    {
+        scope_table = VariableTable(&table);
+        for (auto i: expressions)
+        {
+            i->eval(scope_table);
+        }
+
+        return 0;
+    }
+};
+
 class IfNode: public Node{
     std::vector<std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>>> cases;
     std::shared_ptr<Node> else_case;
@@ -379,12 +463,12 @@ class ForNode: public Node
     public:
     ForNode(){}
 
-    ForNode(std::shared_ptr<Node> end_value_node, std::shared_ptr<Node> step_value_node, std::shared_ptr<Node> executed_node, std::shared_ptr<Node> var_assign)
+    ForNode(std::vector<std::shared_ptr<Node>> expressions)
     {
-    this->end_value_node = end_value_node;
-    this->step_value_node =step_value_node;
-    this->executed_node = executed_node;
-    this->var_assign = var_assign;
+    this->var_assign = expressions.at(0);
+    this->end_value_node = expressions.at(1);
+    this->step_value_node = expressions.at(2);
+    this->executed_node = expressions.at(3);
     }
 
     string str()
@@ -468,87 +552,3 @@ class CallNode: public Node
 };
 
 
-class Argument: public Node
-{
-    //contain the expressions to be executed in scope
-    std::vector<std::shared_ptr<Node>> arguments;
-
-    //contain scope variables
-    VariableTable scope_table;
-
-    public:
-
-    Argument(std::vector<std::shared_ptr<Node>> arguments)
-    {
-        this->arguments = arguments;
-    }
-
-    string str()
-    {
-        string s;
-        s += "Arguments (\n";
-
-        for (auto i: arguments)
-        {
-            s += i->str();
-            s += '\n';
-        }
-        s += ")";
-        return s;
-    }
-
-    float eval(VariableTable& table)
-    {
-        scope_table = VariableTable(&table);
-        for (auto i: arguments)
-        {
-            i->eval(scope_table);
-        }
-
-        return 0;
-    }
-};
-
-//class to scope expressions
-class Scope : public Node
-{
-    //contain the expressions to be executed in scope
-    std::vector<std::shared_ptr<Node>> expressions;
-
-    //contain scope variables
-    VariableTable scope_table;
-
-    public:
-    
-    //No default init because we must have expressions
-    Scope(std::vector<std::shared_ptr<Node>> expressions)
-    {
-        this->expressions = expressions;
-    }
-
-    string str()
-    {
-        string s;
-        s += "Scope {\n";
-
-        for (auto i: expressions)
-        {
-            s += i->str();
-            s += '\n';
-        }
-        s += "}";
-        return s;
-    }
-
-    float eval(VariableTable& table)
-    {
-        scope_table = VariableTable(&table);
-        for (auto i: expressions)
-        {
-            i->eval(scope_table);
-        }
-
-        return 0;
-    }
-
-};

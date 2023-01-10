@@ -103,41 +103,32 @@ class Parser{
         return (std::make_unique<IfNode>(cases, else_case));
     }
 
+    std::shared_ptr<Node> make_arguments()
+    {
+
+    }
+
     std::shared_ptr<Node> for_expr()
     {
+        std::vector<std::shared_ptr<Node>> expressions;
         ++(*this);
         //check for LPAREN
         ++(*this);
         //check for VAR -> variable assignment in loop scope
-        std::shared_ptr<Node> var = expression();
+        expressions.push_back(expression());
         //check for comma
         ++(*this);
         //end cond
-        std::shared_ptr<Node> end_condition = expression();
+        expressions.push_back(expression());
         //check for comma
         ++(*this);
-        std::shared_ptr<Node> step_condition = expression();
+        expressions.push_back(expression());
         //check for RPAREN
         ++(*this);
-        //check for SOB
-        ++(*this);
-        std::shared_ptr<Node> execute = expression();
+        expressions.push_back(expression());
         //check for EOB
 
-        return std::make_unique<ForNode>(end_condition, step_condition, execute, var);
-    }
-
-    void check_paren()
-    {
-        ++(*this);
-        //check for LPAREN
-        ++(*this);
-        while (current_matches({"SEP"}))
-        {
-
-        }
-
-
+        return std::make_unique<ForNode>(expressions);
     }
 
     std::shared_ptr<Node> while_expr()
