@@ -71,6 +71,7 @@ class VariableTable{
 //base node class -> contains virtual string representation method
 class Node{
     public:
+
     Node(){};
 
     // virtual ~Node()
@@ -79,8 +80,7 @@ class Node{
     // }
 
     virtual string str(){
-        string s = "";
-        return s;
+        return "";
     };
 
     virtual float eval(VariableTable& table){
@@ -327,6 +327,49 @@ class VarAccessNode: public Node{
     }
 };
 
+//class to scope expressions
+class Scope : public Node
+{
+    public:
+
+    //contain the expressions to be executed in scope
+    std::vector<std::shared_ptr<Node>> expressions;
+
+    //contain scope variables
+    VariableTable scope_table;
+    
+    //No default init because we must have expressions
+    Scope(std::vector<std::shared_ptr<Node>> expressions)
+    {
+        this->expressions = expressions;
+    }
+
+    string str()
+    {
+        string s;
+        s += "Scope {\n";
+
+        for (auto i: expressions)
+        {
+            s += i->str();
+            s += "\n";
+        }
+        s += "}\n";
+        return s;
+    }
+
+    float eval(VariableTable& table)
+    {
+        scope_table = VariableTable(&table);
+        for (auto i: expressions)
+        {
+            i->eval(scope_table);
+        }
+
+        return 0;
+    }
+};
+
 class Argument: public Node
 {
     //contain the expressions to be executed in scope
@@ -345,75 +388,32 @@ class Argument: public Node
     string str()
     {
         string s;
-        s += "Arguments (\n";
+        s += "Arguments (";
 
-        for (auto i: arguments)
+        for (int i = 0; i < arguments.size(); ++i)
         {
-            s += i->str();
-            s += '\n';
+            s += arguments.at(i)->str();
+            
+            if (i != arguments.size() - 1)
+            {
+                s += ", ";
+            }
         }
-        s += ")";
+        s += ")\n";
         return s;
     }
 
-    float eval(VariableTable& table)
+    std::shared_ptr<Node> get(int idx)
     {
-        scope_table = VariableTable(&table);
-        for (auto i: arguments)
-        {
-            i->eval(scope_table);
-        }
-
-        return 0;
+        return arguments.at(idx);
     }
 };
 
-//class to scope expressions
-class Scope : public Node
-{
-    //contain the expressions to be executed in scope
-    std::vector<std::shared_ptr<Node>> expressions;
-
-    //contain scope variables
-    VariableTable scope_table;
-
-    public:
-    
-    //No default init because we must have expressions
-    Scope(std::vector<std::shared_ptr<Node>> expressions)
-    {
-        this->expressions = expressions;
-    }
-
-    string str()
-    {
-        string s;
-        s += "Scope {\n";
-
-        for (auto i: expressions)
-        {
-            s += i->str();
-            s += '\n';
-        }
-        s += "}";
-        return s;
-    }
-
-    float eval(VariableTable& table)
-    {
-        scope_table = VariableTable(&table);
-        for (auto i: expressions)
-        {
-            i->eval(scope_table);
-        }
-
-        return 0;
-    }
-};
 
 class IfNode: public Node{
     std::vector<std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>>> cases;
     std::shared_ptr<Node> else_case;
+    VariableTable local_table;
 
     public:
     IfNode(){};
@@ -439,53 +439,62 @@ class IfNode: public Node{
         }
         return s;
     }
-
+    
     float eval(VariableTable& table){
-        for (std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>> case_: cases){
-            if ((*(std::get<0>(case_))).eval(table)){
-                return (*(std::get<1>(case_))).eval(table);
+        for (std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>> case_: cases)
+        {
+            //get argument table to be used as local_scope -> 0 will always be an argument node
+            local_table = VariableTable(table);
+            if ((*(std::get<0>(case_))).eval(local_table)){
+                return (*(std::get<1>(case_))).eval(local_table);
             }
         }
         if (else_case != NULL){
             return (*else_case).eval(table);
         }
+
+        return 0;
     }
 };
 
 class ForNode: public Node
 {
-    std::shared_ptr<Node> end_value_node;
-    std::shared_ptr<Node> step_value_node;
-    std::shared_ptr<Node> executed_node;
     std::shared_ptr<Node> var_assign;
-    VariableTable loop_scope_table;
+    std::shared_ptr<Node> end_value;
+    std::shared_ptr<Node> step_value;
+    std::shared_ptr<Node> arguments;
+    std::shared_ptr<Node> execution;
 
     public:
     ForNode(){}
 
-    ForNode(std::vector<std::shared_ptr<Node>> expressions)
+    //  The input argument must have a size of three
+    ForNode(std::shared_ptr<Argument> arguments, std::shared_ptr<Node> execution)
     {
-    this->var_assign = expressions.at(0);
-    this->end_value_node = expressions.at(1);
-    this->step_value_node = expressions.at(2);
-    this->executed_node = expressions.at(3);
+    this->var_assign = arguments->get(0);
+    this->end_value = arguments->get(1);
+    this->step_value = arguments->get(2);
+    this->execution = execution;
+    this->arguments = arguments;
     }
 
     string str()
     {
-        string s = "For (" + (*var_assign).str() + ", " + (*end_value_node).str() + ", " + (*step_value_node).str() + ") Do: " + (*executed_node).str();
+        string s = "For " + arguments->str() +  "Do: " + execution->str();
         return s;
     }
 
     float eval(VariableTable& table)
     {  
-        //loop_scope_table = VariableTable(table);
-        (*var_assign).eval(table);
-        while ((*end_value_node).eval(table))
+        VariableTable local_table = VariableTable(&table);
+        var_assign->eval(local_table);
+        while ((end_value->eval(local_table)))
         {
-            (*executed_node).eval(table);
-            (*step_value_node).eval(table);
+            execution->eval(local_table);
+            step_value->eval(local_table);
         }
+
+        return 0;
     }
 
 };
@@ -515,6 +524,8 @@ class WhileNode: public Node
         {
             (*body_node).eval(table);
         }
+
+        return 0;
     }
 
 };
@@ -522,32 +533,38 @@ class WhileNode: public Node
 class FuncDefNode: public Node
 {
     Token var_name_tok;
-    std::vector<Token> arg_name_toks;
-    std::shared_ptr<Node> body_node;
+    std::shared_ptr<Node> args;
+    std::shared_ptr<Node> scope;
 
     public:
     FuncDefNode(){};
 
-    FuncDefNode(Token var_name_tok, std::vector<Token> arg_name_toks, std::shared_ptr<Node> body_node)
+    FuncDefNode(Token var_name_tok, std::shared_ptr<Node> args, std::shared_ptr<Node> scope)
     {
         this->var_name_tok = var_name_tok;
-        this->arg_name_toks = arg_name_toks;
-        this->body_node = body_node;
+        this->args = args;
+        this->scope = scope;
+    }
+
+    string str()
+    {
+        string s = "Created Function(" + var_name_tok.get_value() + ")\n" + args->str() + scope->str();
+        return s;
     }
 };
 
 class CallNode: public Node
 {
     std::shared_ptr<Node> node_to_call;
-    std::vector<std::shared_ptr<Node>> arg_nodes;
+    std::shared_ptr<Node> args;
 
     public:
     CallNode(){};
 
-    CallNode(std::shared_ptr<Node> node_to_call, std::vector<std::shared_ptr<Node>> arg_nodes)
+    CallNode(std::shared_ptr<Node> node_to_call, std::shared_ptr<Node> args)
     {
         this->node_to_call = node_to_call;
-        this->arg_nodes = arg_nodes;
+        this->args = args;
     }
 };
 

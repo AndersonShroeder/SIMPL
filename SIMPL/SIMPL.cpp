@@ -1,6 +1,7 @@
 
 #include "ConsCommands.h"
 #include <stdlib.h>
+#include <chrono>
 
 //TODO
 
@@ -20,6 +21,26 @@
 //  2. Log position of error
 //  3. Log line that produced error
 
+struct Timer
+{
+    std::chrono::time_point<std::chrono::steady_clock> start, end;
+    std::chrono::duration<float> duration;
+
+    Timer()
+    {
+        start = std::chrono::steady_clock::now();
+    }
+
+   ~Timer()
+   {
+    end = std::chrono::steady_clock::now();
+    duration = end - start;
+
+    float ms = duration.count() * 1000;
+    std::cout << "Executed in " << ms << "ms" << '\n';
+   } 
+
+};
 
 
 int main(){
@@ -37,6 +58,8 @@ int main(){
             continue;
         }
         
+        Timer timer;
+
         FileData structure = run(input, filename);
         std::vector<Token> tokens = structure.get_tokens();
         Parser parser = Parser(tokens);

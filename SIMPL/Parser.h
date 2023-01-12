@@ -34,6 +34,12 @@ class Parser{
             current_tok = &tokens.at(tok_idx);
             current_type = (*current_tok).get_type();
         }
+
+        else
+        {
+            current_tok = NULL;
+            current_type = "EOF";
+        }
     }
 
 
@@ -44,6 +50,12 @@ class Parser{
     }
 
 
+    bool check_type(std::shared_ptr<Node> ptr, string check)
+    {
+        return typeid(*ptr).name() == check;
+    }
+
+
     std::shared_ptr<Node> parse()
     {
         std::shared_ptr<Node> res = expression();
@@ -51,84 +63,113 @@ class Parser{
     }
 
 
-    std::shared_ptr<Node> if_expr(std::vector<std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>>>& cases)
+    template <class T>
+    std::shared_ptr<T> loop_block(std::vector<std::shared_ptr<Node>>& expressions, string start_char, string end_char, string delim_char)
     {
+        // if the scope expression is correct -> this will always return
+        while(current_matches({delim_char}))
+        {
+            ++(*this);
+
+            if (current_matches({end_char}))
+            {
+                ++(*this);
+                return std::make_unique<T>(expressions);
+            }
+
+            expressions.push_back(expression());
+
+            if (!current_matches({delim_char}))
+            {
+                std::cout << "Expected " << delim_char << '\n';
+            }
+        }
+
+        if (!current_matches({end_char}))
+        {
+            std::cout << "Expected " << end_char << '\n';
+        }
+
+        ++(*this);
+
+        //Return -> if this statement is ever reached, there is an error
+        return std::make_unique<T>(expressions);
+    }
+
+    // Makes a scope block -> always called when current_type == SOB ('{')
+    std::shared_ptr<Node> make_scope()
+    {
+        std::vector<std::shared_ptr<Node>> expressions;
+        ++(*this);
+        expressions.push_back(expression());
+
+        return loop_block<Scope>(expressions, "SOB", "EOB", "EOL");
+    }
+
+
+    // Makes an argument block -> always called when current_type == LPAREN ('(')
+    std::shared_ptr<Argument> make_arguments(bool for_loop=false)
+    {
+        std::vector<std::shared_ptr<Node>> expressions;
+        //check for LPAREN
+        ++(*this);
+
+        if (for_loop)
+        {
+            std::shared_ptr<Node> ptr = expression();
+            if (!check_type(ptr, "VarAssignNode"))
+            {
+                //error    
+            }
+
+            expressions.push_back(ptr);
+        }
+
+        else
+        {
+            expressions.push_back(expression());
+        }
+
+        return loop_block<Argument>(expressions, "LPAREN", "RPAREN", "SEP");
+    }
+
+
+    std::shared_ptr<Node> if_expr()
+    {
+        std::vector<std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>>> cases;
         std::shared_ptr<Node> else_case=NULL;
-        ++(*this);
+        ++(*this); // Move past if token
 
-        if (!current_matches({"LPAREN"})){
-            std::cout << "MAKE ERROR - paren must enclose conditional (EL/IF)" << '\n';
-        }
-        std::shared_ptr<Node> condition = expression(); // get if condition
+        std::shared_ptr<Node> condition = make_arguments(); // get if condition
+        std::shared_ptr<Node> expr = make_scope(); // get expr to be executed
 
-        if (!current_matches({"SOB"})){
-            std::cout << "MAKE ERROR - invalid if statement (EL/IF)" << '\n';
-        }
-
-        ++(*this);
-        std::shared_ptr<Node> expr = expression(); // get expr to be executed
-
-        if (!current_matches({"EOB"})){
-            std::cout << "MAKE ERROR - missing enclosing braces (EL/IF)" << '\n';
-        }
-
-        ++(*this);
-        cases.push_back(std::make_tuple(condition, expr)); //add condition/expr to data struct -> if cond is true expr is evaluated
+        cases.push_back(std::make_tuple(condition, expr)); // add condition/expr to data struct -> if cond is true expr is evaluated
 
         while (current_matches({"ELIF"})){
             ++(*this);
-            std::shared_ptr<Node> condition = expression();
-            ++(*this);
-            std::shared_ptr<Node> expr = expression();
-            ++(*this);
-            ++(*this);
+            std::shared_ptr<Node> condition = make_arguments();
+            std::shared_ptr<Node> expr = make_scope();
             cases.push_back(std::make_tuple(condition, expr));
         }
 
         if (current_matches({"ELSE"})){
             ++(*this);
-            if (!current_matches({"SOB"})){
-                std::cout << "MAKE ERROR - invalid if statement (Else)" << '\n';
-            }
-            ++(*this);
-
-            else_case = expression();
-            ++(*this);
-            if (!current_matches({"EOB"})){
-                std::cout << "MAKE ERROR - missing enclosing braces (Else)" << '\n';
-            }
-            ++(*this);
+            else_case = make_scope();
         }
 
         return (std::make_unique<IfNode>(cases, else_case));
-    }
-
-    std::shared_ptr<Node> make_arguments()
-    {
-
     }
 
     std::shared_ptr<Node> for_expr()
     {
         std::vector<std::shared_ptr<Node>> expressions;
         ++(*this);
-        //check for LPAREN
-        ++(*this);
-        //check for VAR -> variable assignment in loop scope
-        expressions.push_back(expression());
-        //check for comma
-        ++(*this);
-        //end cond
-        expressions.push_back(expression());
-        //check for comma
-        ++(*this);
-        expressions.push_back(expression());
-        //check for RPAREN
-        ++(*this);
-        expressions.push_back(expression());
-        //check for EOB
+        std::shared_ptr<Argument> ptr = make_arguments(true);
 
-        return std::make_unique<ForNode>(expressions);
+        // Expressions contained in loop scope
+        std::shared_ptr<Node> scope = make_scope();
+
+        return std::make_unique<ForNode>(ptr, scope);
     }
 
     std::shared_ptr<Node> while_expr()
@@ -146,6 +187,7 @@ class Parser{
         return std::make_unique<WhileNode>(condition, execute);
     }
 
+    // called when current_type is a function keyword
     std::shared_ptr<Node> func_def()
     {
         Token var_name_tok;
@@ -155,7 +197,6 @@ class Parser{
         {
             var_name_tok = (*current_tok);
             ++(*this);
-            //expect lParen
         }
         else
         {
@@ -163,33 +204,10 @@ class Parser{
             //expected lparen
         }
 
-        ++(*this);
+        std::shared_ptr<Node> args = make_arguments();
+        std::shared_ptr<Node> scope = make_scope();
 
-        if (current_matches({"ID"}))
-        {
-            arg_name_toks.push_back((*current_tok));
-            ++(*this);
-
-            while (current_matches({"SEP"}))
-            {
-                ++(*this);
-                //check for id
-                arg_name_toks.push_back((*current_tok));
-                ++(*this);
-            }
-        }
-        //check for rparen - expected rparen or comma
-        else
-        {
-            //check for rparen -> expected id or parent
-        }
-        ++(*this);
-        //check for curly braces
-        ++(*this);
-        std::shared_ptr<Node> node_to_return = expression();
-        ++(*this);
-        //check for curly brace
-        return std::make_unique<FuncDefNode>(var_name_tok, arg_name_toks, node_to_return);
+        return std::make_unique<FuncDefNode>(var_name_tok, args, scope);
     }
 
     std::shared_ptr<Node> call()
@@ -197,21 +215,7 @@ class Parser{
         std::shared_ptr<Node> node = atom();
         if (current_matches({"LPAREN"}))
         {
-            ++(*this);
-            std::vector<std::shared_ptr<Node>> args;
-            if (current_matches({"RPAREN"}))
-            {
-                ++(*this);
-            }
-            else
-            {
-                args.push_back(expression());
-                while (current_matches({"SEP"}))
-                {
-                    ++(*this);
-                    args.push_back(expression());
-                }
-            }
+            std::shared_ptr<Node> args = make_arguments();
             return std::make_unique<CallNode>(node, args);
         }
         return node;
@@ -245,22 +249,18 @@ class Parser{
         }
 
         else if (current_matches({"IF"})){
-            std::vector<std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>>> cases;
-            return if_expr(cases);
+            return if_expr();
         }
 
         else if (current_matches({"FOR"})){
-            std::vector<std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>>> cases;
             return for_expr();
         }
 
         else if (current_matches({"WHILE"})){
-            std::vector<std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>>> cases;
             return while_expr();
         }
 
-        else if (current_matches({"FUNC"})){
-            std::vector<std::tuple<std::shared_ptr<Node>, std::shared_ptr<Node>>> cases;
+        else if (current_matches({"FUNCTION"})){
             return func_def();
         }
 
@@ -312,42 +312,6 @@ class Parser{
         return binary_operation(operands, &Parser::arith_expr);
     }
 
-    std::shared_ptr<Node> make_scope()
-    {
-        std::vector<std::shared_ptr<Node>> expressions;
-        expressions.push_back(expression());
-
-        // if the scope expression is correct -> this will always return
-        while (current_matches({"EOL"}))
-        {
-            ++(*this);
-
-            if (current_matches({"EOB"}))
-            {
-                ++(*this);
-                return std::make_unique<Scope>(expressions);
-            }
-
-            expressions.push_back(expression());
-
-            //No "EOL"
-
-            if (!current_matches({"EOL"}))
-            {
-                std::cout << "Expected ;\n";
-            }
-        }
-
-        
-
-        if (current_matches({"EOB"}))
-        {
-            std::cout << "Expected }\n";
-        }
-
-        //Return -> if this statement is ever reached, there is an error
-        return std::make_unique<Scope>(expressions);
-    }
 
     //Generates Expressions
     std::shared_ptr<Node> expression(){
@@ -375,7 +339,6 @@ class Parser{
         //If there is a scope we must create a scoped node
         if (current_matches({"SOB"}))
         {
-            ++(*this);
             return make_scope();
         }
 
