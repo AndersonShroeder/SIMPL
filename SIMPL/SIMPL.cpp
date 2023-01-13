@@ -80,28 +80,28 @@ int main()
             result.print_error();
         }
 
-        // else
-        // {
-        //     if (console.toks)
-        //     {
-        //         for (Token tok : tokens)
-        //         {
-        //             tok.print();
-        //         }
-        //     }
+        else
+        {
+            if (console.toks)
+            {
+                for (Token tok : tokens)
+                {
+                    tok.print();
+                }
+            }
 
-        //     if (console.syntax)
-        //     {
-        //         std::cout << (*ast).str() << '\n';
-        //     }
+            if (console.syntax)
+            {
+                std::cout << (*ast).str() << '\n';
+            }
 
-        //     if (console.interp)
-        //     {
-        //         Interpreter interp = Interpreter(ast, &global);
-        //         float out = interp.visit();
-        //         std::cout << out << '\n';
-        //     }
-        // }
+            if (console.interp)
+            {
+                Interpreter interp = Interpreter(ast, &global);
+                float out = interp.visit();
+                std::cout << out << '\n';
+            }
+        }
     }
 
     return 0;
