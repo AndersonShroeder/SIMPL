@@ -3,23 +3,23 @@
 #include <stdlib.h>
 #include <chrono>
 
-//TODO
+// TODO
 
-//Syntax enforcement
+// Syntax enforcement
 
-//Fix Run function
+// Fix Run function
 
-//reading from file
-//  1. semi-colons mark end of expression
-//  2. 
+// reading from file
+//   1. semi-colons mark end of expression
+//   2.
 
-//Switch Parser/Nodes to stack allocation
-//  1. pass a default initialized Node 
+// Switch Parser/Nodes to stack allocation
+//   1. pass a default initialized Node
 
-//Error Detection
-//  1. Some sort of wrapper that automatically checks for correct {}/()
-//  2. Log position of error
-//  3. Log line that produced error
+// Error Detection
+//   1. Some sort of wrapper that automatically checks for correct {}/()
+//   2. Log position of error
+//   3. Log line that produced error
 
 struct Timer
 {
@@ -31,61 +31,77 @@ struct Timer
         start = std::chrono::steady_clock::now();
     }
 
-   ~Timer()
-   {
-    end = std::chrono::steady_clock::now();
-    duration = end - start;
+    ~Timer()
+    {
+        end = std::chrono::steady_clock::now();
+        duration = end - start;
 
-    float ms = duration.count() * 1000;
-    std::cout << "Executed in " << ms << "ms" << '\n';
-   } 
-
+        float ms = duration.count() * 1000;
+        std::cout << "Executed in " << ms << "ms" << '\n';
+    }
 };
 
-
-int main(){
+int main()
+{
     string input;
     string filename;
     ConsoleInterface console = ConsoleInterface();
     VariableTable global = VariableTable();
 
-    while (true){
+    while (true)
+    {
         std::cout << "SIMPL > ";
         std::getline(std::cin, input);
         console.check_inputs(input);
 
-        if (console.cont){
+        if (console.cont)
+        {
             continue;
         }
-        
-        Timer timer;
 
-        FileData structure = run(input, filename);
-        std::vector<Token> tokens = structure.get_tokens();
-        Parser parser = Parser(tokens);
+        Timer timer;
+        Result result;
+
+        // Generate Tokens
+        Lexer lexer = Lexer(input, filename, &result);
+        std::vector<Token> tokens = lexer.make_tokens(); 
+
+        if (result.check_error())
+        {
+            result.print_error();
+            continue;
+        }
+
+        Parser parser = Parser(tokens, &result);
         auto ast = parser.parse();
 
-        if (structure.check_error()){
-            std::cout << structure.get_error() + '\n' + structure.get_position().str() << '\n';
+        if (result.check_error())
+        {
+            result.print_error();
         }
 
-        else{
-            if (console.toks){
-                for (Token tok: tokens){
-                    tok.print();
-                }
-            }
+        // else
+        // {
+        //     if (console.toks)
+        //     {
+        //         for (Token tok : tokens)
+        //         {
+        //             tok.print();
+        //         }
+        //     }
 
-            if (console.syntax){
-                std::cout << (*ast).str() << '\n';
-            }
+        //     if (console.syntax)
+        //     {
+        //         std::cout << (*ast).str() << '\n';
+        //     }
 
-            if (console.interp){
-                Interpreter interp = Interpreter(ast, &global);
-                float out = interp.visit();
-                std::cout << out << '\n';
-            }
-        }
+        //     if (console.interp)
+        //     {
+        //         Interpreter interp = Interpreter(ast, &global);
+        //         float out = interp.visit();
+        //         std::cout << out << '\n';
+        //     }
+        // }
     }
 
     return 0;

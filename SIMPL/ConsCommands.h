@@ -1,49 +1,63 @@
-#include "run.h"
+#include "Interpreter.h"
 
-class ConsoleInterface{
-    public:
-
+class ConsoleInterface
+{
+public:
     bool toks = false;
-    bool interp = true;
-    bool syntax = false;
+    bool interp = false;
+    bool syntax = true;
     bool cont = false;
 
     ConsoleInterface(){};
 
-    void view_settings(bool& value, string name){
+    void view_settings(bool &value, string name)
+    {
         value = !value;
-        if (value){
-            std::cout << "=========================" << '\n' << name << " Enabled" << '\n' << "=========================" << '\n';
+        if (value)
+        {
+            std::cout << "=========================" << '\n'
+                      << name << " Enabled" << '\n'
+                      << "=========================" << '\n';
         }
-        else{
-            std::cout << "=========================" << '\n' << name << " Disabled" << '\n' << "=========================" << '\n';
+        else
+        {
+            std::cout << "=========================" << '\n'
+                      << name << " Disabled" << '\n'
+                      << "=========================" << '\n';
         }
     }
 
-    void check_inputs(string& input){
+    void check_inputs(string &input)
+    {
         cont = false;
-        if (input == "-t"){
+        if (input == "-t")
+        {
             view_settings(toks, "Token View");
             cont = true;
         }
 
-        if (input == "-stop"){
+        if (input == "-stop")
+        {
             cont = true;
         }
 
-        if (input == "-i"){
+        if (input == "-i")
+        {
             view_settings(interp, "Interpretor");
             cont = true;
         }
 
-        if (input == "-s"){
+        if (input == "-s")
+        {
             view_settings(syntax, "AST View");
             cont = true;
         }
 
-        if (input == "-readfile"){
+        if (input == "-readfile")
+        {
             string output = read_file();
-            if (output == "FAIL"){
+            if (output == "FAIL")
+            {
                 cont = true;
             }
             input = output;
@@ -71,11 +85,10 @@ class ConsoleInterface{
         {
             while (std::getline(file, line))
             {
-                input+=line;
+                input += line;
             }
 
             return input;
         }
     }
 };
-    

@@ -1,50 +1,135 @@
 #include "Constants.h"
 
-class Error
+struct Position
 {
-    string error_details;
-    string error_name;
+    bool end_file = false;
+    int line = 1;
+    int column = -1;
+    char current_char;
+    string filename;
+    string text;
+    string line_text;
 
-    public:
+    Position() {}
 
-    bool error = false;
-
-    Error(){}
-
-    Error(string error_name, string error_details)
+    Position(string txt, string fn)
     {
-        this->error_name = error_name;
-        this->error_details = error_details;
-        error = true;
+        // text = txt;
+        filename = fn;
+        line_text = txt;
+        ++(*this);
     }
 
-    void make_error(string type)
+    void operator++()
     {
-        error_details = type;
-        error = true;
+        column += 1;
+        if (column < line_text.size())
+        {
+            current_char = line_text.at(column);
+        }
+
+        // else if (line < text.size() - 1){
+        //     line += 1;
+        //     line_text = text.at(line);
+
+        //     column = -1;
+        //     ++(*this);
+        // }
+
+        else
+        {
+            end_file = true;
+            current_char = 0;
+        }
     }
 
     string str()
     {
-        return error_name + ": " + error_details;
+        return "<" + filename + "> " + "Line: " + std::to_string(line) + ", Column: " + std::to_string(column) + '\n';
     }
 
+    char *get_current_char()
+    {
+        return &current_char;
+    }
+
+    bool &stop()
+    {
+        return end_file;
+    }
 };
 
-class InvalidChar: public Error
+class Error
 {
-    public:
-    InvalidChar(string character) : Error("Invalid Character", character){}
+    string error_details;
+    string error_name;
+    Position pos;
+
+public:
+    bool error = false;
+
+    Error() {}
+
+    Error(string error_name, string error_details, Position pos)
+    {
+        this->error_name = error_name;
+        this->error_details = error_details;
+        this->pos = pos;
+    }
+
+    string str()
+    {
+        return pos.str() + error_name + ": " + error_details + '\n';
+    }
 };
 
-class InvalidNum: public Error
+class InvalidChar : public Error
 {
-    public:
-    InvalidNum(string num) : Error("Invalid Number Character", num){}
+public:
+    InvalidChar(string character, Position pos) : Error("Invalid Character", character, pos) {}
 };
 
-class MissingCharacter: public Error
+class InvalidNum : public Error
 {
-    public:
-    MissingCharacter(string character) : Error("Missing Character", character){}
+public:
+    InvalidNum(string num, Position pos) : Error("Invalid Number Character", num, pos) {}
+};
+
+class MissingCharacter : public Error
+{
+public:
+    MissingCharacter(string character, Position pos) : Error("Missing Character", character, pos) {}
+};
+
+class Expected : public Error
+{
+public:
+    Expected(string character, Position pos) : Error("Expected", character, pos) {}
+};
+
+
+
+
+class Result
+{
+    std::shared_ptr<Error> error = NULL;
+
+public:
+
+    Result() {}
+
+    void make_error(std::shared_ptr<Error> error)
+    {
+        this->error = error;
+    }
+
+    bool check_error()
+    {
+        return error != NULL;
+    }
+
+    void print_error()
+    {
+        std::cout << error->str() << '\n';
+    }
 };

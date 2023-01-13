@@ -1,21 +1,22 @@
 #include "Parser.h"
-#include "Variables.h"
+//#include "Variables.h"
 
-
-class Interpreter{
+class Interpreter
+{
     std::shared_ptr<Node> ast;
-    VariableTable* table;
+    VariableTable *table;
 
-    public:
-    Interpreter(){}
+public:
+    Interpreter() {}
 
-    Interpreter(std::shared_ptr<Node> ast, VariableTable* table){
+    Interpreter(std::shared_ptr<Node> ast, VariableTable *table)
+    {
         this->ast = ast;
         this->table = table;
     }
 
-    float visit(){
+    float visit()
+    {
         return (*ast).eval(*table);
     };
-
 };
