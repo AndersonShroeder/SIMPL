@@ -1,0 +1,4 @@
+# ninja log v5
+1	667	1698350457819378793	CMakeFiles/SIMPL.dir/main.cpp.o	6127f1bf9588a39b
+2	690	1698350457844291610	CMakeFiles/SIMPL.dir/InstructionStream/InstructionStream.cpp.o	826a7e52332058e7
+690	895	1698350458051872683	SIMPL	e7b0fe6e5b1ed9fa
